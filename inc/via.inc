@@ -1,0 +1,16 @@
+.import VIA_PORTB
+.import VIA_PORTA
+.import VIA_DDRB
+.import VIA_DDRA
+.import VIA_T1CL
+.import VIA_T1CH
+.import VIA_T1LL
+.import VIA_T1LH
+.import VIA_T2CL
+.import VIA_T2CH
+.import VIA_SR
+.import VIA_ACR
+.import VIA_PCR
+.import VIA_IFR
+.import VIA_IER
+.import VIA_PANH

@@ -1,0 +1,20 @@
+.include "acia.inc"
+.include "conio.inc"
+.include "utils.inc"
+.include "wozmon.inc"
+
+.segment "SYSCALLS"
+        .word _acia_init
+        .word _acia_getc
+        .word _acia_putc
+        .word _acia_getc_nw
+        .word _acia_puts
+        .word _cgetc
+        .word _cputc
+        .word _cputs
+        .word _cgetc_nw
+        .word _delay_ms
+        .word _wozmon
+        .word _prbyte
+        .word _write
+        .word _primm

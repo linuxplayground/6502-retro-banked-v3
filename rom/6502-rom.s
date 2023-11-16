@@ -9,7 +9,6 @@
 .include "banks.inc"
 
 .import __LORAM_START__, __BANK_START__, rstfar
-.export xstart, xend
 
 
 LED     = %00000001
@@ -17,10 +16,6 @@ SD_CS   = %00010000
 SD_SCK  = %00001000
 SD_MOSI = %00000100
 SD_MISO = %00000010
-
-.bss
-xstart: .res 2  ; holds the start address from xmodem
-xend:   .res 2  ; holds the address of the last byte from xmodem
 
 .code
 

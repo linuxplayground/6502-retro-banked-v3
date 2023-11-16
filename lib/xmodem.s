@@ -2,8 +2,6 @@
         .include "acia.inc"
         .include "sysram.inc"
 
-        .import xstart, xend
-
         .export _xmodem
 
 SOH     =    $01        ; start block

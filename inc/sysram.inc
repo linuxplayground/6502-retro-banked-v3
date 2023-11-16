@@ -2,5 +2,9 @@
 .global sector_buffer
 .global sector_buffer_end
 .global sector_lba
+.global sdcard_param
+.global sd_cmd_buf
 .global wozmon_buf
 .global jmpfr
+.global xstart
+.global xend

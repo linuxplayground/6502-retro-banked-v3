@@ -1,5 +1,8 @@
-; bank switch call code
+
+; bank switch call code JSFAR
 ; copied from : https://github.com/commanderx16/x16-rom/blob/master/inc/jsrfar.inc
+; ; (C)2019 Michael Steil, License: 2-clause BSD
+
 ; jsr   jsrfar
 ; .word _conin
 ; .byte KERNALROM

@@ -2,7 +2,7 @@
 ; 
 ; BYE - Quits EHBASIC
 ; CLS - CLEAR Screen by issuing Ansi escape sequence "ESC [J2"
-.import rstfar
+      rstfar = $027D
 
 .code
 retro_cls:
@@ -28,5 +28,3 @@ save:
         
 strAnsiCLSHome: .byte $0D,$0A, $1b, "[2J", $1b, "[H", $0
 strByeMessage:  .byte $0D,$0A,"Exiting ehBasic now...", $0
-.segment "SYSCALLS"
-.byte $0

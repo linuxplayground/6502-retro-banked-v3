@@ -4,6 +4,7 @@
 
         .export _xmodem
 
+BANK_BASE = $9F00
 SOH     =    $01        ; start block
 EOT     =    $04        ; end of text marker
 ACK     =    $06        ; good block acknowledged

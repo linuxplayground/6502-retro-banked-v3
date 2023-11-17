@@ -17,10 +17,10 @@ tmpstack:               .res 1  ; 1a
 ; Console Buffer indexes
 con_r_idx:              .res 1  ; 1b
 con_w_idx:              .res 1  ; 1c
-; User IRQ
-userirq:                .res 2  ; 1d
 ; bank variables
-imparm:                 .res 2  ; $1f
+imparm:                 .res 2  ; $1d
+                                ; end at $1e
+
 ram_bank:               .res 1  ; $21
 rom_bank:               .res 1  ; $22
 ; ; sdcard

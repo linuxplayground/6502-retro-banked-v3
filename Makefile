@@ -20,29 +20,40 @@ rom_sources = 	6502-rom.s
 rom_objects = 	$(rom_sources:%.s=%.o)
 rom_bins    =   $(rom_sources:%.s=%.bin)
 
+
+basic_sources = min_mon.s
+basic_objects = min_mon.o
+basic_bins = basic.bin
+
 .PHONY: all clean
 
-all: clean build_dirs $(lib) $(rom_bins)
+all: clean build_dirs $(lib) $(rom_bins) $(basic_bins)
 
+# LIB
 $(load_lib_objects):
 	ca65 --cpu 65c02 -DDEBUG=0 -l $(@:%.o=build/lib/%.lst) -I inc -o $(@:%.o=build/lib/%.o) $(@:%.o=lib/%.s)
-
-$(lib_objects):
-	ca65 --cpu 65c02 -DDEBUG=0 -l $(@:%.o=build/lib/%.lst) -I inc -o $(@:%.o=build/lib/%.o) $(@:%.o=lib/%.s)
-
-$(rom_objects): $(lib_objects)
-	ca65 --cpu 65c02 -DDEBUG=0 -l $(@:%.o=build/rom/%.lst) -I inc -o $(@:%.o=build/rom/%.o) $(@:%.o=rom/%.s)
-
 $(lib): $(load_lib_objects) sysram.o zeropage.o
 	cp -f cfg/none.lib build/lib/os.lib
 	ar65 a build/lib/os.lib $(^:%.o=build/lib/%.o)
-
+# ROM
+$(lib_objects):
+	ca65 --cpu 65c02 -DDEBUG=0 -l $(@:%.o=build/lib/%.lst) -I inc -o $(@:%.o=build/lib/%.o) $(@:%.o=lib/%.s)
+$(rom_objects): $(lib_objects)
+	ca65 --cpu 65c02 -DDEBUG=0 -l $(@:%.o=build/rom/%.lst) -I inc -o $(@:%.o=build/rom/%.o) $(@:%.o=rom/%.s)
 $(rom_bins): $(rom_objects)
-	ld65 -C cfg/rom.cfg -Ln $(@:%.bin=build/rom/%.lnk) -m $(@:%.bin=build/rom/%.map) -o $(@:%.bin=build/rom/%.bin) $(@:%.bin=build/rom/%.o) $(lib_objects:%.o=build/lib/%.o) $(lib)
+	cc65 -E cfg/rom.cfgtpl -o build/rom.cfg
+	ld65 -C build/rom.cfg -Ln $(@:%.bin=build/rom/%.lnk) -m $(@:%.bin=build/rom/%.map) -o $(@:%.bin=build/rom/%.bin) $(@:%.bin=build/rom/%.o) $(lib_objects:%.o=build/lib/%.o) $(lib)
+# BASIC
+$(basic_objects):
+	ca65 --feature labels_without_colons --cpu 65c02 -DDEBUG=0 -l $(@:%.o=build/basic/%.lst) -I inc -o $(@:%.o=build/basic/%.o) $(@:%.o=basic/%.s)
+$(basic_bins): $(basic_objects)
+	cc65 -E cfg/basic.cfgtpl -o build/basic.cfg
+	ld65 -C build/basic.cfg -Ln $(@:%.bin=build/basic/%.lnk) -m $(@:%.bin=build/basic/%.map) -o $(@:%.bin=build/basic/%.bin) build/basic/min_mon.o build/lib/zeropage.o
 
 build_dirs:
 	mkdir -pv build/rom
 	mkdir -pv build/lib
+	mkdir -pv build/basic
 
 minipro:
 	minipro -p SST27SF512@DIP28 -s -w build/combined.bin
@@ -51,5 +62,4 @@ clean:
 
 world:
 	$(MAKE) all
-	cd basic && $(MAKE) all
-	cat build/rom/6502-rom.bin basic/basic.bin > build/combined.bin
+	cat build/rom/6502-rom.bin build/basic/basic.bin > build/combined.bin

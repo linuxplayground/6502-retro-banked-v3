@@ -1,20 +1,12 @@
 .include "zeropage.inc"
 
-.import __ACIA_START__
-.export _acia_init
-.export _acia_putc
-.export _acia_getc
-.export _acia_getc_nw
-.export _acia_puts
-.export ACIA_STATUS
+.export _acia_init, _acia_putc, _acia_getc, _acia_getc_nw, _acia_puts, ACIA_STATUS
 
-ACIA_DATA    = __ACIA_START__ + $00
-ACIA_STATUS  = __ACIA_START__ + $01
-ACIA_COMMAND = __ACIA_START__ + $02
-ACIA_CONTROL = __ACIA_START__ + $03
-
-        .code
-
+ACIA_BASE    = $9F10
+ACIA_DATA    = ACIA_BASE + $00
+ACIA_STATUS  = ACIA_BASE + $01
+ACIA_COMMAND = ACIA_BASE + $02
+ACIA_CONTROL = ACIA_BASE + $03
 
 ACIA_PARITY_DISABLE          = %00000000
 ACIA_ECHO_DISABLE            = %00000000

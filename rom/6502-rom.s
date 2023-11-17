@@ -8,8 +8,12 @@
 .include "lib.inc"
 .include "banks.inc"
 
-.import __LORAM_START__, __BANK_START__, rstfar
+.import  rstfar
+.import __KERNRAM_LOAD__, __KERNRAM_RUN__, __KERNRAM_SIZE__
 
+LORAM_START = $0800
+LORAM_END   = $9EFF
+BANK_BASE = $9F00
 
 LED     = %00000001
 SD_CS   = %00010000
@@ -29,16 +33,39 @@ _main:
         stz     con_w_idx
         stz     con_r_idx
 
-        stz     userirq
-        stz     userirq + 1
+        ; default bank is 01, bank 0 will be used by DOS.
+        lda     #$01
+        sta     ram_bank
+        sta     BANK_BASE + 0
 
-        stz     ram_bank
         stz     rom_bank
+
+        ; clear kernal ram data
+; clear kernal variables
+;
+	ldx #0          ;zero low memory
+:	stz $0000,x     ;zero page
+	stz $0200,x     ;user buffers and vars
+	stz $0300,x     ;system space and user space
+        stz $0400,x     ;"
+	inx
+	bne :-
+
+        ; copy kernal bank code into KERNRAM
+	ldx #<__KERNRAM_SIZE__
+:	lda __KERNRAM_LOAD__-1,x
+	sta __KERNRAM_RUN__-1,x
+	dex
+	bne :-
+        
+        ; set up indirect jmpfr after copy kernalram code.
 
         lda     #$6c      ; save jmp opcode to jmpfr.
         sta     jmpfr
-        ; stz     jmpfr + 1 ; place holder for address to jump to
-        ; stz     jmpfr + 2
+.if DEBUG=0
+        stz     jmpfr + 1 ; place holder for address to jump to
+        stz     jmpfr + 2 ; this is commented for DEBUG Purposes
+.endif
 
         cli
 
@@ -73,7 +100,7 @@ run_xmodem:
         jmp     loop
 run_prog:
         print   nl
-        jsr     __LORAM_START__
+        jsr     LORAM_START
         print   nl
         jmp     loop
 run_wozmon:
@@ -94,7 +121,6 @@ irq_handler:
         phx
         phy
         cld
-
 @acia_irq:
         bit     ACIA_STATUS
         bpl     @exit_irq
@@ -104,17 +130,10 @@ irq_handler:
         inc     con_w_idx
         bra     @exit_irq
 @exit_irq:
-
         ply
         plx
         pla
         rti
-
-service_user_irq:
-        jmp     (userirq)
-
-void_user_irq:
-        rts
 
 
 .rodata
@@ -140,4 +159,5 @@ nl:     .byte $0a, $0d, $0
 .segment "VECTORS"
         .word nmi_handler
         .word _main
+.segment "IRQVEC"
         .word irq_handler

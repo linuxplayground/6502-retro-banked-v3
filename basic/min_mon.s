@@ -6,9 +6,9 @@
 ; will do nothing, you'll still have to do a reset to run the code.
       .include "basic.s"
       .include "6502-retro-basic.s"
-      ; .include "acia.inc"
 
-      .import jsfar
+      jsfar = $0200
+
 ; put the IRQ and MNI code in RAM so that it can be changed
 
 IRQ_vec     = VEC_SV+2        ; IRQ code vector
@@ -40,27 +40,13 @@ LAB_stlp
 
 LAB_signon
       LDA   LAB_mess,Y        ; get byte from sign on message
-      BEQ   LAB_nokey         ; exit loop if done
+      BEQ   LAB_cold          ; exit loop if done
 
       JSR   V_OUTP            ; output character
       INY                     ; increment index
       BNE   LAB_signon        ; loop, branch always
-
-LAB_nokey
-      JSR   V_INPT            ; call scan input device
-      BCC   LAB_nokey         ; loop if no key
-
-      AND   #$DF              ; mask xx0x xxxx, ensure upper case
-      CMP   #'W'              ; compare with [W]arm start
-      BEQ   LAB_dowarm        ; branch if [W]arm start
-
-      CMP   #'C'              ; compare with [C]old start
-      BNE   RES_vec           ; loop if not [C]old start
-
+LAB_cold
       JMP   LAB_COLD          ; do EhBASIC cold start
-
-LAB_dowarm
-      JMP   LAB_WARM          ; do EhBASIC warm start
 
 ; Polled 65c51 I/O routines adapted to EhBASIC. Delay routine from
 ; http://forum.6502.org/viewtopic.php?f=4&t=2543&start=30#p29795
@@ -133,10 +119,11 @@ NMI_CODE
 END_CODE
 
 LAB_mess
-      .byte $0D,$0A,"6502 EhBASIC [C]old/[W]arm ?",$00
+      .byte $0D,$0A,"6502 EhBASIC",$00
                               ; sign on string
 
 .segment "VECTORS"
       .word $0000
       .word RES_vec
+.segment "IRQVEC"
       .word $0000

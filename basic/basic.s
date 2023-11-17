@@ -41,6 +41,7 @@
 ;      5.6     floating point multiply rounding bug
 ;      5.7     VAL() may cause string variables to be trashed
 
+
 ; zero page use ..
 
 ; the following locations are bulk initialized from StrTab at LAB_GMEM
@@ -447,7 +448,7 @@ LAB_SKFF          = LAB_STAK+$FF
                               ; flushed stack address
 
 ; the following locations are bulk initialized from PG2_TABS at LAB_COLD
-ccflag            = $0200     ; BASIC CTRL-C flag, 00 = enabled, 01 = dis
+ccflag            = $500      ; BASIC CTRL-C flag, 00 = enabled, 01 = dis
 ccbyte            = ccflag+1  ; BASIC CTRL-C byte
 ccnull            = ccbyte+1  ; BASIC CTRL-C byte timeout
 
@@ -471,7 +472,7 @@ Ibuffs            = VEC_SV+$16
 Ibuffe            = Ibuffs+$47; end of input buffer
 
 Ram_base          = $1000     ; start of user RAM (set as needed, should be page aligned)
-Ram_top           = $9EFF     ; end of user RAM+1 (set as needed, should be page aligned)
+Ram_top           = $9F00     ; end of user RAM+1 (set as needed, should be page aligned)
 
 Stack_floor       = 16        ; bytes left free on stack for background interrupts
 
@@ -479,6 +480,7 @@ Stack_floor       = 16        ; bytes left free on stack for background interrup
 
       .segment "CODE"
 
+      JMP   RES_vec
 ; BASIC cold start entry point
 
 ; new page 2 initialisation, copy block to ccflag on
@@ -1224,7 +1226,7 @@ LAB_142A
       INY                     ; adjust for line copy
 ; *** begin patch for when Ibuffs is $xx00 - Daryl Rictor ***
 ; *** insert
-      .IF   Ibuffs&$FF=0
+      .IF   Ibuffs & $FF=0
       LDA   Bpntrl            ; test for $00
       BNE   LAB_142P          ; not $00
       DEC   Bpntrh            ; allow for increment when $xx00

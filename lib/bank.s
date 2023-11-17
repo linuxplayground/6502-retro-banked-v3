@@ -9,10 +9,9 @@
 ; next instruction
 .include "zeropage.inc"
 .include "sysram.inc"
-
-.import __BANK_START__
-
 .export jsfar, rstfar
+
+BANK_BASE = $9F00
 
 ; XXX
 ; jmpfr is defined as 3 reserved bytes in sysram.s.  The main rom routine sets the first 
@@ -23,7 +22,7 @@
 ; XXX
 
 
-.segment "BANKHANDLER"
+.segment "KERNRAM"
 ; this routine will save registers and navigate the stack to find the target indrect jump
 ; location and desired bank.  Once found, it will update the jmpfar argument, write the bank register
 ; depenging on if it's to ram or rom and finally jmp to that location.
@@ -70,7 +69,7 @@ jsrfar1:
 	sta     $0105,x         ;save original bank into reserved byte
 	iny
 	lda     (imparm),y      ;target address bank
-	sta     __BANK_START__ + 0        ;set RAM bank
+	sta     BANK_BASE + 0        ;set RAM bank
 	ply                     ;restore registers
 	plx
 	pla
@@ -81,7 +80,7 @@ jsrfar1:
 	phx
 	tsx
 	lda     $0104,x
-	sta     __BANK_START__ + 0    ;restore RAM bank
+	sta     BANK_BASE + 0    ;restore RAM bank
 jsrfar2:
 	lda     $0103,x     ;overwrite reserved byte...
 	sta     $0104,x     ;...with copy of .p
@@ -91,7 +90,7 @@ jsrfar2:
 	plp
 	rts
 jsrfar3:
-        sta     __BANK_START__ + 1 ;set ROM bank
+        sta     BANK_BASE + 1 ;set ROM bank
 	pla
 	plp
 	jsr     jmpfr
@@ -100,7 +99,7 @@ jsrfar3:
 	phx
 	tsx
 	lda     $0104,x
-	sta     __BANK_START__ + 1    ;restore ROM bank
+	sta     BANK_BASE + 1    ;restore ROM bank
 	lda     $0103,x     ;overwrite reserved byte...
 	sta     $0104,x     ;...with copy of .p
 	plx
@@ -112,9 +111,11 @@ jsrfar3:
 ; set the rom bank and reset
 ; resets ram bank too
 rstfar:
-	sta	__BANK_START__ + 1
+	sta	BANK_BASE + 1
 	sta	rom_bank
-	stz	__BANK_START__ + 0
+	stz	BANK_BASE + 0
 	sta	ram_bank
 rom_reset:
 	jmp ($FFFC)	     ; do a hard reset to whatever is defined in this rom.
+
+jmpfr:  .res 3

@@ -164,22 +164,37 @@ bank:
 test:
         ; start with page 10
         jsr     _primm
-        .byte "LOW RAM page 10 to page 9E", $0a,$0d,$00
-        lda     #$55
+        .byte $0a,$0d, "LOW RAM page 10 to page 9E", $0a,$0d,$00
+        lda     #0
         ldx     #$10
 :
+        stx     $FE
         stx     $FF
-        stz     $FE
+        stx     $FD
+        txa
         sta     ($FE)
         lda     ($FE)
-        cmp     #$55
+        cmp     $FD
         bne     @fail
         inx
         cpx     #$9F
         bne     :-
         jsr     _primm
+        .byte "LOW RAM TESTS PASSED", $0a,$0d
         .byte "HI RAM", $0a,$0d,$00
-        ldy     #$00
+        bra    @hiram
+@fail:
+        jsr     _primm
+        .byte "Error at page ",$0
+        txa
+        jsr     _prbyte
+        lda     #SYSTEMRAM
+        sta     _rambankreg
+        rts
+@hiram:
+        lda     #$42
+        sta     $2345                   ; store a fixed value at an arbitrary address
+        ldy     #$00                    ; and check it during bank tests to make sure that it does not change.
 :
         phy
         phx
@@ -187,8 +202,6 @@ test:
         .byte $0a,$0d,"Testing RAM BANK: ",$00
         tya
         jsr     _prbyte
-        jsr     _primm
-        .byte  $0a,$0d,$00
         plx
         ply
         sty     _rambankreg
@@ -202,6 +215,9 @@ test:
         lda     ($FE)
         cmp     #$AA
         bne     @fail
+        lda     $2345
+        cmp     #$42
+        bne     @fail
         inx
         cpx     #$C0
         bne     :-
@@ -209,19 +225,11 @@ test:
         cpy     #64
         bne     :--
         jsr     _primm
-        .byte "All Banks tested ok.",$0a, $0d, $0 
+        .byte $0a,$0d,"All Banks tested ok.",$0a, $0d, $0 
         lda     #SYSTEMRAM
         sta     _rambankreg
         rts
 
-@fail:
-        jsr     _primm
-        .byte "Error at page ",$0
-        txa
-        jsr     _prbyte
-        lda     #SYSTEMRAM
-        sta     _rambankreg
-        rts
         
 
 ; read an address.  Assumed to be directly after the filename.
@@ -269,4 +277,5 @@ strSyntaxError: .asciiz "Syntax error"
 strHelp:        .byte $0a, $0d, "D XXXX [YYYY] - Show memory starting at XXXX and optionally ending at YYYY", $0a,$0d
                 .byte           "B X           - Set bank to X",$0a,$0d
                 .byte           "H             - Dispaly this help.",$0a,$0d
+                .byte           "T             - Perform a rudimentary RAM test.",$0a,$0d
                 .byte           "Q             - Quit",$0

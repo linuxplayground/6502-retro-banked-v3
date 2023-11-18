@@ -1,4 +1,5 @@
 .include "acia.inc"
+.include "bank.inc"
 .include "conio.inc"
 .include "utils.inc"
 .include "wozmon.inc"
@@ -18,3 +19,5 @@
         .word _prbyte
         .word _write
         .word _primm
+        .word rstfar
+        .word jsfar

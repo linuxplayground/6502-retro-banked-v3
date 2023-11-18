@@ -1,0 +1,9 @@
+INCLUDES= -I$(TOP)/asminc -I$(TOP)/headers -I$(TOP)/../inc/ -Iheaders
+CCFLAGS=-t none -O --cpu 65c02 $(INCLUDES)
+CAFLAGS= --cpu 65c02 $(INCLUDES) -lbuild/$@.lst
+LDFLAGS= -C$(TOP)/ram.cfg -mbuild/$@.map
+
+CLFLAGS= -C$(TOP)/ram.cfg -lbuild/$@.lst -mbuild/$@.map
+
+KERNALSRC=$(TOP)/libsrc/kernal.s
+LIB=$(TOP)/../build/lib/os.lib

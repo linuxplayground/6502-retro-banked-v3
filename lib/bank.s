@@ -9,9 +9,11 @@
 ; next instruction
 .include "zeropage.inc"
 .include "sysram.inc"
-.export jsfar, rstfar
+.export jsfar, rstfar, rambankreg, rombankreg
 
 BANK_BASE = $9F00
+rambankreg = BANK_BASE + 0
+rombankreg = BANK_BASE + 1
 
 ; XXX
 ; jmpfr is defined as 3 reserved bytes in sysram.s.  The main rom routine sets the first 

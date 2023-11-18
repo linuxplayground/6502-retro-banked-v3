@@ -2,7 +2,6 @@
 
 .export _delay_ms, primm, _primm
 .import _cputc
-.import __BANK_START__
 
 .code
 

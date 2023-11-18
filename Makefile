@@ -16,7 +16,7 @@ lib_sources = 	acia.s \
 		zeropage.s
 lib_objects =   $(lib_sources:%.s=%.o)
 
-rom_sources = 	6502-rom.s
+rom_sources = 	retromon.s
 rom_objects = 	$(rom_sources:%.s=%.o)
 rom_bins    =   $(rom_sources:%.s=%.bin)
 
@@ -39,10 +39,10 @@ $(lib): $(load_lib_objects) sysram.o zeropage.o
 $(lib_objects):
 	ca65 --cpu 65c02 -DDEBUG=0 -l $(@:%.o=build/lib/%.lst) -I inc -o $(@:%.o=build/lib/%.o) $(@:%.o=lib/%.s)
 $(rom_objects): $(lib_objects)
-	ca65 --cpu 65c02 -DDEBUG=0 -l $(@:%.o=build/rom/%.lst) -I inc -o $(@:%.o=build/rom/%.o) $(@:%.o=rom/%.s)
+	ca65 --cpu 65c02 -DDEBUG=0 -l $(@:%.o=build/retromon/%.lst) -I inc -o $(@:%.o=build/retromon/%.o) $(@:%.o=retromon/%.s)
 $(rom_bins): $(rom_objects)
 	cc65 -E cfg/rom.cfgtpl -o build/rom.cfg
-	ld65 -C build/rom.cfg -Ln $(@:%.bin=build/rom/%.lnk) -m $(@:%.bin=build/rom/%.map) -o $(@:%.bin=build/rom/%.bin) $(@:%.bin=build/rom/%.o) $(lib_objects:%.o=build/lib/%.o) $(lib)
+	ld65 -C build/rom.cfg -Ln $(@:%.bin=build/retromon/%.lnk) -m $(@:%.bin=build/retromon/%.map) -o $(@:%.bin=build/retromon/%.bin) $(@:%.bin=build/retromon/%.o) $(lib_objects:%.o=build/lib/%.o) $(lib)
 # BASIC
 $(basic_objects):
 	ca65 --feature labels_without_colons --cpu 65c02 -DDEBUG=0 -l $(@:%.o=build/basic/%.lst) -I inc -o $(@:%.o=build/basic/%.o) $(@:%.o=basic/%.s)
@@ -51,7 +51,7 @@ $(basic_bins): $(basic_objects)
 	ld65 -C build/basic.cfg -Ln $(@:%.bin=build/basic/%.lnk) -m $(@:%.bin=build/basic/%.map) -o $(@:%.bin=build/basic/%.bin) build/basic/min_mon.o build/lib/zeropage.o
 
 build_dirs:
-	mkdir -pv build/rom
+	mkdir -pv build/retromon
 	mkdir -pv build/lib
 	mkdir -pv build/basic
 
@@ -62,4 +62,4 @@ clean:
 
 world:
 	$(MAKE) all
-	cat build/rom/6502-rom.bin build/basic/basic.bin > build/combined.bin
+	cat build/retromon/retromon.bin build/basic/basic.bin > build/combined.bin

@@ -6,7 +6,7 @@
 .include "wozmon.inc"
 .include "xmodem.inc"
 .include "lib.inc"
-.include "banks.inc"
+.include "bank.inc"
 
 .import  rstfar
 .import __KERNRAM_LOAD__, __KERNRAM_RUN__, __KERNRAM_SIZE__
@@ -34,9 +34,9 @@ _main:
         stz     con_r_idx
 
         ; default bank is 01, bank 0 will be used by DOS.
-        lda     #$01
+        lda     #SYSTEMRAM
         sta     ram_bank
-        sta     BANK_BASE + 0
+        sta     rambankreg
 
         stz     rom_bank
 

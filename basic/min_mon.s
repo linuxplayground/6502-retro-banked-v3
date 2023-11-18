@@ -5,7 +5,7 @@
 ; running [F6] then start the code with the RESET [CTRL][SHIFT]R. Just selecting RUN
 ; will do nothing, you'll still have to do a reset to run the code.
       .include "basic.s"
-      .include "6502-retro-basic.s"
+      .include "basic_additions.s"
 
       jsfar = $0200
 

@@ -1,6 +1,0 @@
-
-KERNZP: start = $0000, size = $0021;
-DOSZP:  start = $0031, size = $000F;
-
-KERNRAM:start = $0200, size = $0100, file="";
-SYSTEM: start = $0300, size = $0500, file="";

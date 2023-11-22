@@ -1,0 +1,12 @@
+rambankreg      = $9F00
+rombankreg      = $9F01
+
+acia_data       = $9F10
+acia_status     = $9F11
+acia_command    = $9F12
+acia_control    = $9F13
+
+via_portb       = $9F20
+via_porta       = $9F21
+via_ddrb        = $9F22
+via_ddra        = $9F23

@@ -1,0 +1,9 @@
+MEMORY {
+        #include "linkermem.cfginc"
+        ROM: start = $C000, size = $3E00, fill=yes, fillval=$AA;
+}
+
+SEGMENTS {
+        KERNZP: load = KERNZP, define = yes;
+        CODE:   load = ROM, define = yes;
+}

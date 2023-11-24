@@ -1,1 +1,8 @@
-        KERNZP: start = $0000, size = $0002;
+        BASICZP0: start = $0000, size = $0013, file=""; /* Do not reallocate if expecting BASIC to work */
+        KERNZP:   start = $0013, size = $0008, file="";
+        MONZP:    start = $001B, size = $0012, file="";  /* Used by Wozmon and XMODEM. Can reallocate */
+        BASICZP:  start = $001B, size = $0093, file="";  /* If you need basic to work with other roms, leave this alone */
+        FAT32ZP:  start = $00A7, size = $0058, file="";
+        
+        /* Kernel memory routines */
+        KERNRAM:  start = $0200, size = $0100, file="";

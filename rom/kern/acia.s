@@ -1,5 +1,4 @@
 .include "io.inc"
-.include "acia.inc"
 
 .export acia_init, acia_getc, acia_getc_nw, acia_putc, acia_puts
 
@@ -18,7 +17,7 @@ ACIA_DTR_LOW                 = %00000001
 acia_init:
         lda #$00
         sta acia_status
-        lda #(ACIA_PARITY_DISABLE | ACIA_ECHO_DISABLE | ACIA_TX_INT_DISABLE_RTS_LOW | ACIA_RX_INT_ENABLE | ACIA_DTR_LOW)
+        lda #(ACIA_PARITY_DISABLE | ACIA_ECHO_DISABLE | ACIA_TX_INT_DISABLE_RTS_LOW | ACIA_RX_INT_DISABLE | ACIA_DTR_LOW)
         sta acia_command
         lda #$10
         sta acia_control

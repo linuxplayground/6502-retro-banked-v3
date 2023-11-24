@@ -1,0 +1,13 @@
+MEMORY {
+        #include "linkermem.cfginc"
+        ROM: start = $C000, size = $3FFA, fill=yes, fillval=$AA;
+        VECTORS:  start = $FFFA, size = $0006, fill=yes, fillval=$AA;
+}
+
+SEGMENTS {
+        BASICZP0: load = BASICZP0, type=zp;
+        KERNZP:   load = KERNZP, type=zp;
+        BASICZP:  load = BASICZP, type=zp;
+        CODE:     load = ROM, type=ro;
+        VECTORS:  load = VECTORS;
+}

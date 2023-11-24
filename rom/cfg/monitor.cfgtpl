@@ -1,9 +1,18 @@
 MEMORY {
         #include "linkermem.cfginc"
-        ROM: start = $C000, size = $3E00, fill=yes, fillval=$AA;
+        KERNBUF: start=$A000, size=$1000, file="";
+        ROM: start = $C000, size = $3F00, fill=yes, fillval=$AA;
+        JMPTBL: start = $FF00, size = $00FA, fill=yes, fillval=$00;
+        VECTORS:  start = $FFFA, size = $0006, fill=yes, fillval=$AA;
 }
 
 SEGMENTS {
-        KERNZP: load = KERNZP, define = yes;
-        CODE:   load = ROM, define = yes;
+        KERNZP: load = KERNZP, define = yes, type=zp;
+        MONZP: load = MONZP, define = yes, type=zp;
+        CODE:   load = ROM, type = ro, define = yes;
+        RODATA: load = ROM, type = ro, define = yes;
+        KERNRAM: load = ROM, run = KERNRAM,type = ro, define = yes; 
+        KERNBUF: load = KERNBUF, type = rw;
+        JMPTBL: load = JMPTBL, type = ro;
+        VECTORS: load = VECTORS, type = ro;
 }

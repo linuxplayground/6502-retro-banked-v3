@@ -8,6 +8,8 @@ ASFLAGS     += -I inc
 ASFLAGS     += -D CPU_65C02=1
 # put all symbols into .sym files
 ASFLAGS     += -g
+# Allow labels without colons
+ASFLAGS     += --feature labels_without_colons
 # all files are allowed to use 65SC02 features
 ASFLAGS     += --cpu 65SC02
 
@@ -15,7 +17,9 @@ BUILD_DIR = build
 CFG_DIR=$(BUILD_DIR)/cfg
 
 KERN_CORE_SOURCES = \
-	kern/kernzp.s
+	kern/kernzp.s \
+	kern/memory.s \
+	kern/jmptbl.s
 
 DRIVER_SOURCES = \
 	kern/acia.s
@@ -26,12 +30,20 @@ KERN_SOURCES = \
 
 MONITOR_SOURCES = \
 	monitor/mon.s \
+	monitor/wozmon.s \
+	monitor/xmodem.s \
 	$(KERN_SOURCES)
 
+BASIC_SOURCES = \
+	kern/kernzp.s \
+	basic/min_mon.s
+
 MONITOR_OBJS = $(addprefix $(BUILD_DIR)/, $(MONITOR_SOURCES:.s=.o))
+BASIC_OBJS   = $(addprefix $(BUILD_DIR)/, $(BASIC_SOURCES:.s=.o))
 
 BANK_BINS = \
-	$(BUILD_DIR)/monitor.bin
+	$(BUILD_DIR)/monitor.bin \
+	$(BUILD_DIR)/basic.bin
 
 GENERIC_DEPS = \
 	inc/io.inc
@@ -39,6 +51,8 @@ GENERIC_DEPS = \
 KERN_DEPS = \
 	$(GENERIC_DEPS) \
 	$(GIT_SIGNATURE)
+
+BASIC_DEPS = 
 
 GIT_SIGNATURE=$(BUILD_DIR)/../signature.bin
 all: $(BUILD_DIR)/rom.bin
@@ -65,8 +79,18 @@ $(BUILD_DIR)/%.o: %.s
 	@mkdir -p $$(dirname $@)
 	$(AS) $(ASFLAGS) -l $(BUILD_DIR)/$*.lst $< -o $@
 
+# BANK 0 - Monitor and kernel
 $(BUILD_DIR)/monitor.bin: $(GIT_SIGNATURE) $(MONITOR_OBJS) $(MONITOR_DEPS) $(CFG_DIR)/monitor.cfg
 	@mkdir -p $$(dirname $@)
 	$(LD) -C $(CFG_DIR)/monitor.cfg $(MONITOR_OBJS) -o $@ -m $(BUILD_DIR)/monitor.map -Ln $(BUILD_DIR)/monitor.sym
 	./scripts/relist.py $(BUILD_DIR)/monitor.map $(BUILD_DIR)/monitor
 	./scripts/relist.py $(BUILD_DIR)/monitor.map $(BUILD_DIR)/kern
+
+# BANK 1 - Basic
+$(BUILD_DIR)/basic.bin: $(GIT_SIGNATURE) $(BASIC_OBJS) $(BASIC_DEPS) $(CFG_DIR)/basic.cfg
+	@mkdir -p $$(dirname $@)
+	$(LD) -C $(CFG_DIR)/basic.cfg $(BASIC_OBJS) -o $@ -m $(BUILD_DIR)/basic.map -Ln $(BUILD_DIR)/basic.sym
+	./scripts/relist.py $(BUILD_DIR)/basic.map $(BUILD_DIR)/basic
+
+minipro:
+	 minipro -s -p SST27SF512@DIP28 -w $(BUILD_DIR)/rom.bin

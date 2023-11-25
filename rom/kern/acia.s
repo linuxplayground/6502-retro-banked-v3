@@ -2,7 +2,7 @@
 
 .export acia_init, acia_getc, acia_getc_nw, acia_putc, acia_puts
 
-.globalzp kernptr1
+.globalzp krn_ptr1
 
         .code
 
@@ -63,11 +63,11 @@ acia_getc_nw:
 ; string in XA
 acia_puts:
         phy
-        sta     kernptr1
-        stx     kernptr1 + 1
+        sta     krn_ptr1
+        stx     krn_ptr1 + 1
         ldy     #0
 :
-        lda     (kernptr1),y
+        lda     (krn_ptr1),y
         beq     :+
         jsr     acia_putc
         iny

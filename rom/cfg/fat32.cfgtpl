@@ -1,0 +1,11 @@
+MEMORY {
+	#include "linkermem.cfginc"
+
+	FAT32:     start = $C000, size = $4000, fill=yes, fillval=$AA;
+}
+
+SEGMENTS {
+	API:          load = FAT32,      type = ro;
+	CODE:         load = FAT32,      type = ro;
+	BSS:          load = F32DAT,     type = bss;
+}

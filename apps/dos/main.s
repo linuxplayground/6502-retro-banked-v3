@@ -1,92 +1,114 @@
-.include "../../rom/fat32/regs.inc"
-.include "../../rom/inc/kern.inc"
-.include "../../rom/inc/banks.inc"
-.include "../../rom/inc/fat32.inc"
+.export fat32_size
+.export fat32_errno
+.export fat32_dirent
+.export fat32_readonly
+.export skip_mask
+.export shared_vars
+.export shared_vars_len
 
-.import ram_bank, rom_bank, fat32_dirent
+.import sdcard_init, fat32_init, fat32_alloc_context, fat32_free_context, fat32_open, fat32_read
+.import fat32_set_context, fat32_read_byte
 
-.importzp fat32_ptr, fat32_ptr2, fat32_bufptr, fat32_lfn_bufptr
+.include "../fat32/lib.inc"
+.include "kern.inc"
+.include "banks.inc"
 
-.macro fat32_call addr
-        jsr jsrfar
-        .word addr
-        .byte FAT32_BANK
+.segment "DOSBSS"
+
+shared_vars:
+
+; API arguments and return data, shared from DOS into FAT32
+; but used primarily by FAT32
+fat32_dirent:        .tag dirent   ; Buffer containing decoded directory entry
+fat32_size:          .res 4        ; Used for fat32_read, fat32_write, fat32_get_offset, fat32_get_free_space
+fat32_errno:         .byte 0       ; Last error
+fat32_readonly:      .byte 0       ; User-accessible read-only flag
+
+skip_mask:
+      .byte 0
+context:
+      .byte 0
+
+shared_vars_len = * - shared_vars
+
+.macro newline
+	pha
+	phx
+	lda #<strEndl
+	ldx #>strEndl
+	jsr acia_puts
+	plx
+	pla
 .endmacro
 
-.macro kern_call addr
-        jsr jsrfar
-        .word addr
-        .byte MONITOR_BANK
+.macro print addr
+	pha
+	phx
+	lda #<addr
+	ldx #>addr
+	jsr acia_puts
+	plx
+	pla
 .endmacro
 
-ptr1 = $f0
 .code
+	ldx #<shared_vars_len
+:	stz shared_vars+$ff,x
+	dex
+	bne :-
 
-main:
-        lda #1
-        sta rambankreg
+	ldx #0
+:	stz shared_vars,x
+	inx
+	bne :-
 
-        lda #<strWelcome
-        ldx #>strWelcome
-        kern_call acia_puts
+	newline
+	print strWelcome
+	
+	jsr sdcard_init
+	bcc error
+	jsr fat32_init
+	bcc error
+	lda #0
+	jsr fat32_alloc_context
+	bcc error
+	sta context
+	jsr fat32_set_context
 
-        fat32_call sdcard_init
-        bcc exit      
+	lda #<strFilename
+	sta fat32_ptr
+	lda #>strFilename
+	sta fat32_ptr + 1
+	jsr fat32_open
+	bcc error
 
-        fat32_call fat32_init
-        bcc exit
+	lda fat32_dirent + dirent::size
+	sta fat32_size
+	lda fat32_dirent + dirent::size + 1
+	sta fat32_size + 1
+	stz fat32_ptr
+	lda #$80
+	sta fat32_ptr + 1
+	
+	newline
 
-        lda #0
-        fat32_call fat32_alloc_context
+@loop:	jsr fat32_read_byte
+	bcc end
+	jsr acia_putc
+	jmp @loop
 
-        lda #<strRoot
-        sta fat32_ptr
-        lda #>strRoot
-        sta fat32_ptr + 1
-        fat32_call fat32_open_dir
-        bcc exit
-        fat32_call fat32_read_dirent
-        bcc exit
-        jmp print_dir
-exit:
-        rts
+end:
+	lda context
+	jsr fat32_free_context
+	rts
 
-print_dir:
-        lda fat32_dirent + dirent::attributes
-        cmp #$20
-        bne print_dir_next
-
-        lda #<strEndl
-        ldx #>strEndl
-        kern_call acia_puts
-
-
-        ldy #0
-:       lda fat32_dirent + dirent::name, y
-        beq :+
-        kern_call acia_putc
-        iny
-        beq :+
-        jmp :-
-:
-        lda #':'
-        kern_call acia_putc
-        lda fat32_dirent + dirent::attributes
-        kern_call prbyte
-
-print_dir_next:
-        fat32_call fat32_read_dirent
-        bcs print_dir
-
-        rts
-
-
-jsrfar:
-        .include "../../rom/inc/jsrfar.inc"
+error:
+	newline
+	lda fat32_errno
+	jsr prbyte
+	rts
 
 .rodata
-
-strWelcome: .byte $0a,$0d, "WELCOME TO DOS",$0
-strEnd:     .byte $0a,$0d, "QUITTING ...",$0
-strRoot:    .byte "/",$0
-strEndl:    .byte $0a,$0d,$0
+strWelcome:  .byte "Welcome to DOS",$0
+strEndl:     .byte $0a, $0d, $0
+strFilename: .byte "/TEST.TXT",$0

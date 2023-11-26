@@ -1,7 +1,7 @@
 .include "io.inc"
 .include "banks.inc"
 .import acia_init, acia_getc, acia_getc_nw, acia_putc, acia_puts
-.import jsrfar, init_ram
+.import jsrfar, init_ram, shared_vars, shared_vars_len
 .import wozmon, xmodem
 
 .globalzp ram_bank, rom_bank
@@ -20,6 +20,19 @@ main:
         sta rom_bank
         sta ram_bank
         sta rambankreg
+
+        ; for the longest time I struggeled to debug why opening files was failing for me.
+        ; turns out these BSS Variables declared in dos.s must be initialised to zero.
+        ; CA65 does not initialise BSS data to 0 by default.
+	ldx #<shared_vars_len
+:	stz shared_vars+$ff,x
+	dex
+	bne :-
+
+	ldx #0
+:	stz shared_vars,x
+	inx
+	bne :-
 
         cli
 

@@ -3,13 +3,7 @@ ROM = ../../rom
 LOADTRIM = python3 ../loadtrim.py
 BUILD_DIR = build
 
-LIB_SOURCES = \
-	sdcard.s \
-	fat32.s \
-	match.s \
-	mkfs.s \
-	text_input.s \
-	doszp.s
+LIB_SOURCES = 
 LIB_OBJS = $(addprefix $(BUILD_DIR)/, $(LIB_SOURCES:.s=.o))
 
 RAW = $(BUILD_DIR)/dos.raw
@@ -26,9 +20,11 @@ $(BUILD_DIR)/%.o: %.s
 $(BUILD_DIR):
 	mkdir -pv $@
 
-$(RAW): main.s $(LIB_OBJS)
+$(RAW): main.s $(BUILD_DIR) $(LIB_OBJS)
 	ca65 --cpu 65c02 -I $(ROM)/inc -l $(BUILD_DIR)/$*.lst $< -o $(BUILD_DIR)/main.o
-	ld65 -C dos.cfg -m $(BUILD_DIR)/dos.map $(BUILD_DIR)/main.o $(LIB_OBJS) -o $@
+	ld65 -C dos.cfg -m $(BUILD_DIR)/dos.map $(BUILD_DIR)/main.o $(LIB_OBJS) -o $@ \
+	`$(ROM)/findsymbols $(ROM)/build/monitor.sym fat32_ptr fat32_dirent fat32_size fat32_dirent fat32_errno` \
+	`$(ROM)/findsymbols $(ROM)/build/monitor.sym ram_bank rom_bank`
 
 $(BIN): $(RAW)
 	$(LOADTRIM) $< $@

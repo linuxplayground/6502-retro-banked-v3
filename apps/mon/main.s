@@ -176,6 +176,13 @@ bank:
         ldx     STDIN_IDX
         inx
         lda     STDIN_BUF,x
+        pha
+        inx
+        lda     STDIN_BUF,x     ; low nibble in X
+        tax
+        stx     STDIN_IDX
+        pla
+        jsr     hex_str_to_byte ; convert to byte
         sta     rambankreg
         rts
 
@@ -223,7 +230,7 @@ strBanner:      .asciiz "Extended Monitor"
 strPrompt:      .asciiz "M> "
 strSyntaxError: .asciiz "Syntax error"
 strHelp:        .byte $0a, $0d, "D XXXX [YYYY] - Show memory starting at XXXX and optionally ending at YYYY", $0a,$0d
-                .byte           "B X           - Set bank to X",$0a,$0d
+                .byte           "B XX          - Set bank to XX (with leading zeros)",$0a,$0d
                 .byte           "H             - Dispaly this help.",$0a,$0d
                 .byte           "Q             - Quit",$0
 strEndl:        .byte $0a, $0d, $0

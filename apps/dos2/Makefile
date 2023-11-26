@@ -1,6 +1,6 @@
 TOP = .
 ROM = ../../rom
-LOADTRIM = python3 ../loadtrim.py
+LOADTRIM = python3 loadtrim.py
 BUILD_DIR = build
 
 LIB_SOURCES = 

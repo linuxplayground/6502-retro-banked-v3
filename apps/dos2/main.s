@@ -66,6 +66,10 @@
 @loop:	fat32_call fat32_read_byte
 	bcc end
 	jsr acia_putc
+	cmp #$0a
+	bne @loop
+	lda #$0d
+	jsr acia_putc
 	jmp @loop
 
 end:
@@ -87,4 +91,4 @@ jsrfar:
 .rodata
 strWelcome:  .byte "Welcome to DOS",$0
 strEndl:     .byte $0a, $0d, $0
-strFilename: .byte "/TEST.TXT",$0
+strFilename: .byte "/subdir/long_file_name.txt",$0

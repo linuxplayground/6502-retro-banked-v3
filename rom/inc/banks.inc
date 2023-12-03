@@ -1,4 +1,4 @@
-MONITOR_BANK = $00
+DOS_BANK     = $00
 BASIC_BANK   = $01
 FAT32_BANK   = $02
 

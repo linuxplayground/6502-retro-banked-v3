@@ -41,26 +41,9 @@ timeout_cnt:       .byte 0
 ; clobbers: A,X,Y
 ;-----------------------------------------------------------------------------
 wait_ready:
-	lda #8
-	sta timeout_cnt
-
-@1:	ldx #0		; 2
-@2:	ldy #0		; 2
-@3:	jsr spi_read	; 22
-	cmp #$FF	; 2
-	beq @done	; 2 + 1
-	dey		; 2
-	bne @3		; 2 + 1
-	dex		; 2
-	bne @2		; 2 + 1
-	dec timeout_cnt
-	bne @1
-
-	; Total timeout: ~508 ms @ 8MHz
-
-	; Timeout error
-	clc
-	rts
+	jsr spi_read
+	cmp #$ff
+	beq wait_ready
 
 @done:	sec
 	rts
@@ -132,8 +115,8 @@ send_cmd:
 @1:	dey
 	beq @error	; Out of retries
 	jsr spi_read
-	bit #$80
-	bne @1
+	cmp #$ff
+	beq @1
 
 	; Success
 	sec

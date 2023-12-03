@@ -10,7 +10,6 @@
 .include "banks.inc"
 .include "io.inc"
 
-.globalzp ram_bank, rom_bank
 .import __BASICSYS_START__, __BASICSYS_SIZE__
 
 ; put the IRQ and MNI code in RAM so that it can be changed
@@ -57,13 +56,13 @@ LAB_signon
 ACIAout
         jsr jsrfar
         .word acia_putc
-        .byte MONITOR_BANK
+        .byte DOS_BANK
         rts
 
 ACIAin
         jsr jsrfar
         .word acia_getc_nw
-        .byte MONITOR_BANK
+        .byte DOS_BANK
         rts
 
 ; vector tables

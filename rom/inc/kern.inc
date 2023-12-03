@@ -1,3 +1,7 @@
+ram_bank        = $13
+rom_bank        = $14
+krn_ptr1        = $15
+
 acia_init       = $FF00
 acia_getc       = $FF03
 acia_getc_nw    = $FF06

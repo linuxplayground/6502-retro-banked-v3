@@ -21,7 +21,7 @@ retro_bye:
         ldy     #>strByeMessage
         jsr     LAB_18C3                ; print null terminated string
         
-        lda     #MONITOR_BANK
+        lda     #DOS_BANK
         jmp     rstfar
 
 load:

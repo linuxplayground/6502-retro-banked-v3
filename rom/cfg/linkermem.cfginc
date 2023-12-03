@@ -2,7 +2,8 @@
         KERNZP:   start = $0013, size = $0008;
         MONZP:    start = $001B, size = $0012;  /* Used by Wozmon and XMODEM. Can reallocate */
         BASICZP:  start = $001B, size = $0093;  /* If you need basic to work with other roms, leave this alone */
-        DOSZP:    start = $00A7, size = $000B;
+        DOSZP:    start = $00A7, size = $0019;
+        /* C0 - FF is free */
 
         
         /* Kernel memory routines */

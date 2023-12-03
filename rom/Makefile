@@ -13,6 +13,9 @@ ASFLAGS     += --feature labels_without_colons
 # all files are allowed to use 65SC02 features
 ASFLAGS     += --cpu 65SC02
 
+# DEBUG = 1
+# ASFLAGS     += -DDEBUG=$(DEBUG)
+
 BUILD_DIR = build
 CFG_DIR=$(BUILD_DIR)/cfg
 
@@ -30,7 +33,11 @@ KERN_SOURCES = \
 
 MONITOR_SOURCES = \
 	monitor/doszp.s \
+	monitor/dosmem.s \
 	monitor/dos.s \
+	monitor/convert_error.s \
+	monitor/bin2bcd.s \
+	monitor/readline.s \
 	monitor/mon.s \
 	monitor/wozmon.s \
 	monitor/xmodem.s \
@@ -108,7 +115,6 @@ $(BUILD_DIR)/basic.bin: $(GIT_SIGNATURE) $(BASIC_OBJS) $(BASIC_DEPS) $(CFG_DIR)/
 $(BUILD_DIR)/fat32.bin: $(FAT32_OBJS) $(FAT32_DEPS) $(CFG_DIR)/fat32.cfg
 	@mkdir -p $$(dirname $@)
 	$(LD) -C $(CFG_DIR)/fat32.cfg $(FAT32_OBJS) -o $@ -m $(BUILD_DIR)/fat32.map -Ln $(BUILD_DIR)/fat32.sym \
-	`./findsymbols ${BUILD_DIR}/monitor.sym bank_save fat32_bufptr fat32_lfn_bufptr fat32_ptr fat32_ptr2 krn_ptr1` \
 	`./findsymbols ${BUILD_DIR}/monitor.sym fat32_dirent fat32_errno fat32_readonly fat32_size skip_mask`
 	./scripts/relist.py $(BUILD_DIR)/fat32.map $(BUILD_DIR)/fat32
 

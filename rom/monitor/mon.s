@@ -1,10 +1,14 @@
 .include "io.inc"
 .include "banks.inc"
+.include "macros.inc"
 .import acia_init, acia_getc, acia_getc_nw, acia_putc, acia_puts
 .import jsrfar, init_ram, shared_vars, shared_vars_len
 .import wozmon, xmodem
+.import dos_init, strAnsiCLSHome
 
-.globalzp ram_bank, rom_bank
+.globalzp ram_bank, rom_bank, ptr1
+.global strEndl
+
 .code
 main:
         sei
@@ -16,7 +20,7 @@ main:
         
         jsr acia_init
 
-        lda MONITOR_BANK
+        lda DOS_BANK
         sta rom_bank
         sta ram_bank
         sta rambankreg
@@ -37,9 +41,9 @@ main:
         cli
 
         ; start
-        lda #<banner
-        ldx #>banner
-        jsr acia_puts
+        print strAnsiCLSHome
+        print strWelcome
+        print strHelp
 
 loop:
         lda #<prompt
@@ -50,6 +54,10 @@ loop:
         jsr acia_putc
         cmp #'b'
         beq run_basic
+        cmp #'d'
+        beq run_dos
+        cmp #'h'
+        beq run_help
         cmp #'m'
         beq run_woz
         cmp #'r'
@@ -70,6 +78,12 @@ run_woz:
 run_basic:
         lda #BASIC_BANK
         jmp rstfar
+run_help:
+        jsr cmd_help
+        jmp loop
+run_dos:
+        jsr dos_init
+        jmp loop
 run:
         jsr $0800
         jmp loop
@@ -79,9 +93,37 @@ run_xmodem:
         cli
         jmp loop
 
+cmd_help:
+	print strAnsiCLSHome
+	print strWelcome
+	newline
+	lda #<strHelp
+	sta ptr1
+	lda #>strHelp
+	sta ptr1 + 1
+:	lda (ptr1)
+	beq :+
+	jsr acia_putc
+	inc ptr1
+	bne :-
+	inc ptr1 +1
+	bne :-
+:	rts
+
 .rodata
-banner: .byte $0a,$0d,"RETROMON-V3",$a,$d,$0
 prompt: .byte $0a,$0d,"> ",$0
+strWelcome: .asciiz "6502-Retro!!"
+strHelp:
+	.byte $0a,$0d
+	.byte "USAGE INSTRUCTIONS", $0a,$0d
+	.byte "==============================================================================",$0a,$0d
+	.byte "h => help", $0a,$0d
+	.byte "b => ehBasic", $0a,$0d
+	.byte "d => DOS", $0a, $0d
+	.byte "m => Wozmon", $0a,$0d
+	.byte "r => Run from 0x800", $0a,$0d
+	.byte "x => Xmodem receive", $0a,$0d,$0a,$0d,$0
+
 
 .segment "VECTORS"
         .word $0000

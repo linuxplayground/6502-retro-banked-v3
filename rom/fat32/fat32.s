@@ -8,6 +8,7 @@
 .include "lib.inc"
 .include "sdcard.inc"
 .include "text_input.inc"
+.include "kern.inc"
 
 .import sector_buffer, sector_buffer_end, sector_lba
 
@@ -23,8 +24,6 @@
 .import fat32_dirent
 .import fat32_errno
 .import fat32_readonly
-
-.importzp ram_bank
 
 .macpack longbranch
 
@@ -672,6 +671,10 @@ fat32_alloc_context:
 	jsr fat32_free_context
 	clc
 	rts
+.else
+	txa
+	sec
+.endif
 @rts:
 	rts
 
@@ -2192,32 +2195,8 @@ fat32_rename:
 @0:
 	; Save first argument
 	set16 tmp_buf, fat32_ptr
-
-	; Do target check
-	set16 fat32_ptr, fat32_ptr2
-	; Check target filename for slashes
-	jsr @noslash
-	bcs @6
-	; Error, file has a slash in it
-	lda #ERRNO_ILLEGAL_FILENAME
-	jmp set_errno
-@6:
-	; Make sure target name doesn't exist
-	lda #0 ; allow files and directories
-	jsr find_dirent
-	bcc @1
-	; Error, file exists
-	lda #ERRNO_FILE_EXISTS
-	jmp set_errno
 @1:
 	set16 fat32_ptr, tmp_buf
-	; Check source filename for slashes
-	jsr @noslash
-	bcs @7
-	; Error, file has a slash in it
-	lda #ERRNO_ILLEGAL_FILENAME
-	jmp set_errno
-@7:
 	; Find file to rename
 	lda #0 ; allow files and directories
 	jsr find_dirent
@@ -2235,16 +2214,29 @@ fat32_rename:
 	cpy #32
 	bne @loop
 
-	; delete
-	sec ; ignore read-only bit
-	jsr delete_entry
-	bcs @4
-	rts
-@4:
-
 	; target name
 	set16 fat32_ptr, fat32_ptr2
+	set16 fat32_ptr2, tmp_buf ; save ptr to old name for deletion later
+	; Make sure target name doesn't exist
+	lda #0 ; allow files and directories
+	jsr find_dirent
+	bcc @6
+	; Error, file exists
+	lda #ERRNO_FILE_EXISTS
+	jmp set_errno
+@6:
+	; ensure we aren't trying to rename into a directory that doesn't exist
+	ldy name_offset
+@6a:
+	lda (fat32_ptr),y
+	beq @6b
+	iny
+	cmp #'/'
+	bne @6a
 
+	lda #ERRNO_FILE_NOT_FOUND
+	jmp set_errno
+@6b:
 	; Find space
 	jsr find_space_for_lfn
 	bcc @error
@@ -2272,22 +2264,23 @@ fat32_rename:
 	cpy #32
 	bne @5
 
-	; Write sector buffer to disk
-	jmp save_sector_buffer
-@noslash:
-	ldy #0
-@n1:
-	lda (fat32_ptr),y
-	beq @ns
-	iny
-	cmp #'/'
-	bne @n1
-@ne:
-	clc
-	rts
-@ns:
-	sec
-	rts
+	; Write sector buffer to disk for new dirent
+	jsr save_sector_buffer
+	jcc @error
+
+	; set up old entry for deletion
+	set16 fat32_ptr, fat32_ptr2
+
+	lda #0 ; allow files and directories
+	jsr find_dirent
+	bcs @7
+	lda #ERRNO_FILE_NOT_FOUND
+	jmp set_errno
+@7:
+	; delete
+	sec ; ignore read-only bit
+	jmp delete_entry
+
 ;-----------------------------------------------------------------------------
 ; fat32_set_attribute
 ;
@@ -3102,7 +3095,6 @@ fat32_read_again:
 	; Copy bytecnt bytes from buffer
 	ldy bytecnt
 
-.importzp krn_ptr1
 	bit krn_ptr1        ; MSB=1: stream copy, MSB=0: normal copy
 	bpl @5a
 	jmp x16_stream_copy
@@ -3116,6 +3108,7 @@ fat32_read_again:
 	bcs @5b             ; destination above banked RAM
 	jmp x16_banked_copy
 @5b:
+
 
 	dey
 	beq @6b
@@ -3151,7 +3144,7 @@ fat32_read_done:
 ;-----------------------------------------------------------------------------
 ; restores ram_bank prior to each write, and wraps the
 ; pointer if the write address crosses the $c000 threshold
-.importzp bank_save
+
 tmp_swapindex = krn_ptr1 ; use meaningful aliases for this tmp space
 tmp_done = krn_ptr1+1    ; during bank-aware copy routine
 x16_banked_copy:
@@ -3216,7 +3209,6 @@ x16_stream_copy:
 	lda (fat32_bufptr),y
 	sta (fat32_ptr)
 	jmp fat32_read_cont2
-.endif
 
 
 ;-----------------------------------------------------------------------------

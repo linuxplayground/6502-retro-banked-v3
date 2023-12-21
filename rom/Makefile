@@ -22,6 +22,7 @@ CFG_DIR=$(BUILD_DIR)/cfg
 KERN_CORE_SOURCES = \
 	kern/kernzp.s \
 	kern/memory.s \
+	kern/beep.s \
 	kern/jmptbl.s
 
 DRIVER_SOURCES = \

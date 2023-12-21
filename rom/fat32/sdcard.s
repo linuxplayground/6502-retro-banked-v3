@@ -41,15 +41,33 @@ timeout_cnt:       .byte 0
 ; clobbers: A,X,Y
 ;-----------------------------------------------------------------------------
 wait_ready:
-	jsr spi_read
-	cmp #$ff
-	beq wait_ready
+	lda #2
+	sta timeout_cnt
+
+@1:	ldx #0		; 2
+@2:	ldy #0		; 2
+@3:	jsr spi_read	; 22
+	cmp #$FF	; 2
+	beq @done	; 2 + 1
+	dey		; 2
+	bne @3		; 2 + 1
+	dex		; 2
+	bne @2		; 2 + 1
+	dec timeout_cnt
+	bne @1
+
+	; Total timeout: ~508 ms @ 8MHz
+
+	; Timeout error
+	clc
+	rts
 
 @done:	sec
 	rts
 
 ; read a byte over SPI - result in A
 spi_read:
+	phx
         ldx     #$fe
 @loop:
         lda     #SD_MOSI
@@ -66,6 +84,7 @@ spi_read:
         rol
         tax
         bcs     @loop
+	plx
         rts
 
 ; write a byte (A) via SPI
@@ -96,6 +115,7 @@ spi_write:
 ; first byte of result in A, clobbers: Y
 ;-----------------------------------------------------------------------------
 send_cmd:
+	jsr sdcmd_start
 	; Send the 6 cmdbuf bytes
 	lda cmd_idx
 	jsr spi_write
@@ -119,10 +139,12 @@ send_cmd:
 	beq @1
 
 	; Success
+	jsr sdcmd_end
 	sec
 	rts
 
 @error:	; Error
+	jsr sdcmd_end
 	clc
 	rts
 
@@ -175,20 +197,21 @@ send_cmd:
 .endmacro
 
 sdcmd_start:
-        pha
         php
+	pha
+        phx
         lda     #SD_MOSI
         sta     via_porta
         jsr     sdcmd_nothingbyte
         jsr     sdcmd_nothingbyte
         lda     #$ff
         jsr     spi_write
-        plp
+        plx
         pla
+	plp
         rts
 
 sdcmd_nothingbyte:
-        pha
         ldx     #8
 @loop:
         lda     #(SD_MOSI|SD_CS)
@@ -197,20 +220,21 @@ sdcmd_nothingbyte:
         sta     via_porta
         dex
         bne     @loop
-        pla
         rts
 
 sdcmd_end:
-        pha
         php
+	pha
+        phx
         lda     #$ff
         jsr     spi_write
         jsr     sdcmd_nothingbyte
         jsr     sdcmd_nothingbyte
         lda     #(SD_CS|SD_MOSI)
         sta     via_porta
-        plp
+        plx
         pla
+	plp
         rts
 
 ;-----------------------------------------------------------------------------
@@ -288,12 +312,13 @@ sdcard_init:
 	jsr spi_read
 
 	; Success
+	deselect
 	sec
 	rts
 
 @error:	
-
 	; Error
+	deselect
 	clc
 	rts
 
@@ -303,11 +328,13 @@ sdcard_init:
 ; result: C=0 -> error, C=1 -> success
 ;-----------------------------------------------------------------------------
 sdcard_read_sector:
+	jsr sdcmd_start
 	; Send READ_SINGLE_BLOCK command
 	lda #($40 | 17)
 	sta cmd_idx
 	lda #1
 	sta cmd_crc
+	jsr sdcmd_start
 	jsr send_cmd
 
 	; Wait for start of data packet
@@ -322,6 +349,7 @@ sdcard_read_sector:
 	bne @1
 
 	; Timeout error
+	jsr sdcmd_end
 	deselect
 	clc
 	rts
@@ -344,6 +372,7 @@ sdcard_read_sector:
 	jsr spi_read
 	jsr spi_read
 
+	jsr sdcmd_end
 	; Success
 	deselect
 	sec
@@ -355,6 +384,7 @@ sdcard_read_sector:
 ; result: C=0 -> error, C=1 -> success
 ;-----------------------------------------------------------------------------
 sdcard_write_sector:
+	jsr sdcmd_start
 	; Send WRITE_BLOCK command
 	lda #($40 | 24)
 	sta cmd_idx
@@ -392,11 +422,13 @@ sdcard_write_sector:
 	jsr spi_write
 
 	; Success
+	jsr sdcmd_end
 	deselect
 	sec
 	rts
 
 @error:	; Error
+	jsr sdcmd_end
 	deselect
 	clc
 	rts

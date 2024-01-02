@@ -4,18 +4,22 @@
 
 	.export sector_buffer, sector_buffer_end, sector_lba
 
-SD_CS           = %00010000
-SD_SCK          = %00001000
-SD_MOSI         = %00000100
-SD_MISO         = %00000010
+SD_CS           = %00000010
+SD_SCK          = %00000001
+SD_MOSI         = %10000000
+; SD_MISO         = %00000010
 
 PORTA_OUTPUTPINS =  SD_CS | SD_SCK | SD_MOSI
 
 .macro deselect
         lda     #(SD_CS|SD_MOSI)        ; deselect sdcard
-        sta     via_porta
+        sta     via_portb
 .endmacro
 
+.macro select
+	lda 	#(SD_MOSI)
+	sta 	via_portb
+.endmacro
 	.bss
 cmd_idx = sdcard_param
 cmd_arg = sdcard_param + 1
@@ -32,7 +36,7 @@ sector_lba:
 	.res 1
 
 timeout_cnt:       .byte 0
-
+spi_sr:		.byte 0
         .code
 
 ;-----------------------------------------------------------------------------
@@ -67,48 +71,60 @@ wait_ready:
 
 ; read a byte over SPI - result in A
 spi_read:
+	pha
+	select
+	pla
+	lda #$ff
 	phx
-        ldx     #$fe
-@loop:
-        lda     #SD_MOSI
-        sta     via_porta
-        lda     #SD_MOSI | SD_SCK
-        sta     via_porta
-        lda     via_porta
-        and     #SD_MISO
-        clc
-        beq     @bitnotset
-        sec
-@bitnotset:
-        txa
-        rol
-        tax
-        bcs     @loop
+	phy
+	jsr spi_rw_byte
+	ply
 	plx
-        rts
+	pha
+	deselect
+	pla
+	rts
+
 
 ; write a byte (A) via SPI
 spi_write:
-        phx
-        phy
-        ldx     #8
-@loop:
-        asl
-        tay
-        lda     #0
-        bcc     @sendbit
-        ora     #SD_MOSI
-@sendbit:
-        sta     via_porta
-        eor     #SD_SCK
-        sta     via_porta
-        tya
-        dex
-        bne     @loop
-        ply
-        plx
-        rts
+	pha
+	select
+	pla
+	phx
+	phy
+	jsr spi_rw_byte
+	ply
+	plx
+	pha
+	deselect
+	pla
+	rts
 
+spi_rw_byte:
+	sta spi_sr
+
+	ldx #$08
+
+	lda via_portb
+	and #$fe
+
+	asl
+	tay
+
+@l:	rol spi_sr
+	tya
+	ror
+
+	sta via_portb
+    	inc via_portb
+	sta via_portb
+
+	dex
+	bne @l
+
+	lda via_sr
+	rts
 ;-----------------------------------------------------------------------------
 ; send_cmd - Send cmdbuf
 ;
@@ -201,7 +217,7 @@ sdcmd_start:
 	pha
         phx
         lda     #SD_MOSI
-        sta     via_porta
+        sta     via_portb
         jsr     sdcmd_nothingbyte
         jsr     sdcmd_nothingbyte
         lda     #$ff
@@ -215,9 +231,9 @@ sdcmd_nothingbyte:
         ldx     #8
 @loop:
         lda     #(SD_MOSI|SD_CS)
-        sta     via_porta
+        sta     via_portb
         lda     #(SD_SCK|SD_MOSI|SD_CS)
-        sta     via_porta
+        sta     via_portb
         dex
         bne     @loop
         rts
@@ -231,7 +247,7 @@ sdcmd_end:
         jsr     sdcmd_nothingbyte
         jsr     sdcmd_nothingbyte
         lda     #(SD_CS|SD_MOSI)
-        sta     via_porta
+        sta     via_portb
         plx
         pla
 	plp
@@ -242,16 +258,27 @@ sdcmd_end:
 ; result: C=0 -> error, C=1 -> success
 ;-----------------------------------------------------------------------------
 sdcard_init:
-        lda     #0
-        sta     via_porta
-        lda     #PORTA_OUTPUTPINS
-        sta     via_ddra
+        ; lda     #0
+        ; sta     via_porta
+        ; lda     #PORTA_OUTPUTPINS
+        ; sta     via_ddra
+
+	; init shift register and port b for SPI use
+	; SR shift in, External clock on CB1
+	lda #%00001100
+	sta via_acr
+	; disable VIA1 interrupts
+	lda #%01111111			 ; bit 7 "0", to clear all int sources
+	; sta via_ier
+	; Port b bit 6 and 5 input for sdcard and write protect detection, rest all outputs
+	lda #%10011111
+	sta via_ddrb
 
         lda     #(SD_CS|SD_MOSI)        ; toggle clock 160 times
         ldx     #160
 @clockloop:
         eor     #SD_SCK
-        sta     via_porta
+        sta     via_portb
         dex
         bne     @clockloop
 
@@ -316,7 +343,7 @@ sdcard_init:
 	sec
 	rts
 
-@error:	
+@error:
 	; Error
 	deselect
 	clc

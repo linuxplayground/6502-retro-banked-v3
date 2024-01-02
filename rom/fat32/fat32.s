@@ -3095,6 +3095,8 @@ fat32_read_again:
 	; Copy bytecnt bytes from buffer
 	ldy bytecnt
 
+.ifdef MACHINE_X16
+; .importzp krn_ptr1
 	bit krn_ptr1        ; MSB=1: stream copy, MSB=0: normal copy
 	bpl @5a
 	jmp x16_stream_copy
@@ -3108,7 +3110,7 @@ fat32_read_again:
 	bcs @5b             ; destination above banked RAM
 	jmp x16_banked_copy
 @5b:
-
+.endif
 
 	dey
 	beq @6b
@@ -3141,10 +3143,11 @@ fat32_read_done:
 	rts
 
 
+.ifdef MACHINE_X16
 ;-----------------------------------------------------------------------------
-; restores ram_bank prior to each write, and wraps the
+; restores rambankreg prior to each write, and wraps the
 ; pointer if the write address crosses the $c000 threshold
-
+; .importzp bank_save
 tmp_swapindex = krn_ptr1 ; use meaningful aliases for this tmp space
 tmp_done = krn_ptr1+1    ; during bank-aware copy routine
 x16_banked_copy:
@@ -3209,6 +3212,7 @@ x16_stream_copy:
 	lda (fat32_bufptr),y
 	sta (fat32_ptr)
 	jmp fat32_read_cont2
+.endif
 
 
 ;-----------------------------------------------------------------------------

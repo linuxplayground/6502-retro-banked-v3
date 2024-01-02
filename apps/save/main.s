@@ -56,6 +56,7 @@
 @error:
 	jsr convert_error
 	jsr free_context
+	jsr beep
 	rts
 
 alloc_context:
@@ -91,4 +92,4 @@ jsrfar:
 context: .byte 0
 stage: .byte 0
 .rodata
-strName: .asciiz "testtile.txt"
+strName: .asciiz "/hellord.txt"

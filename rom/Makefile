@@ -16,6 +16,8 @@ ASFLAGS     += --cpu 65SC02
 # DEBUG = 1
 # ASFLAGS     += -DDEBUG=$(DEBUG)
 
+ASFLAGS += -DMACHINE_X16=1
+
 BUILD_DIR = build
 CFG_DIR=$(BUILD_DIR)/cfg
 

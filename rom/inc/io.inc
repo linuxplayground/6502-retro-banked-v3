@@ -10,3 +10,5 @@ via_portb       = $9F20
 via_porta       = $9F21
 via_ddrb        = $9F22
 via_ddra        = $9F23
+via_sr		= $9F2A
+via_acr         = $9F2B

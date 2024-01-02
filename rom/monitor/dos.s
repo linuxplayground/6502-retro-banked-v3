@@ -4,8 +4,9 @@
 .include "banks.inc"
 .include "macros.inc"
 
-SD_CS           = %00010000
-SD_MOSI         = %00000100
+SD_CS           = %00000010
+SD_SCK          = %00000001
+SD_MOSI         = %10000000
 
 .global strEndl
 .importzp ptr1, run_ptr, tmp1
@@ -371,9 +372,8 @@ cmd_save:
 	sta fat32_ptr
 	lda #>path
 	sta fat32_ptr + 1
-	lda #$80
-	rol			; Carry = 1 overwrite file if exists
 	jsr alloc_context
+	sec
 	fat32_call fat32_create
 	bcc @end
 	lda #'.'

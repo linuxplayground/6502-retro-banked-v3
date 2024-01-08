@@ -46,7 +46,7 @@ C=0 means an error occurred and the error can be found in the global variable
 
 The basic flow to read a file into memory for example is:
 
-- `sdcard_init` => init the sdcard
+- `sfs_init` => init the sdcard
 - `sfs_mount` => Load the VolumeID sector into memory, perform a sanity check
   and store the VolumeID into memory for use by the filesystem.
 - store the address of the filename you want to read into the `sfs_fn_ptr`
@@ -60,6 +60,12 @@ The basic flow to read a file into memory for example is:
 The filesystem has no way to close open files.
 
 ### Commands
+
+**sfs_init**
+
+INPUTS: NONE
+
+Initialize the SD Card.
 
 **sfs_format**
 
@@ -192,6 +198,9 @@ VolumeID:       .byte "SFS.DISK"         ; 8 bytes volume ID
   directory index sectors.
 - `data_start`: the first sector in which data is stored.  Note that the format
   function pre-allocates all the data start locations in the index table.
+
+The last 2 bytes of the Volume ID Block must be `66BB`.  This is arbitrary and
+and is similar to how the it's done for FAT filesystems.
 
 ### Index Structure
 

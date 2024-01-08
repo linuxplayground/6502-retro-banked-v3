@@ -2,14 +2,10 @@
 .include "kern.inc"
 .include "sfs.inc"
 .include "structs.inc"
-.MACPACK longbranch
 
 .import sector_lba, sector_buffer, sector_buffer_end
 .import match_name
-
-.export primm
-
-
+.import primm
 
 ; zeropage addresses used
 sfs_ptr         = $C0
@@ -29,12 +25,12 @@ ERRNO_END_OF_INDEX_ERROR        = $04
 ERRNO_FILE_NOT_FOUND_ERROR      = $05
 
 .bss
-sfs_errno:              .byte 0
-current_idx_lba:        .dword 0
-index:                  .tag sIndex
-volid:                  .tag sVolId
-sfs_bytes_rem:          .word 0
-data_start:             .dword 0
+sfs_errno:                 .byte 0
+current_idx_lba:           .dword 0
+index:                     .tag sIndex
+volid:                     .tag sVolId
+sfs_bytes_rem:             .word 0
+data_start:                .dword 0
 sfs_read_first_index_flag: .byte 0
 
 .code
@@ -79,7 +75,7 @@ sfs_writesector:
 ; initialise the library.
 ;------------------------------------------------------------------------
 sfs_init:
-        rts
+        jmp sdcard_init
 
 ;------------------------------------------------------------------------
 ; read volume id block from sdcard, store data into the struct and validate
@@ -159,11 +155,13 @@ sfs_load_index_block:
         sta sector_lba + 3
         jsr sdcard_read_sector
         bcc @error
+
         lda #<sector_buffer
         sta sfs_ptr
         lda #>sector_buffer
         sta sfs_ptr + 1
         stz sfs_read_first_index_flag   ; prepare to read first index
+        
         lda #ERRNO_OK
         sta sfs_errno
         rts
@@ -239,8 +237,8 @@ sfs_read_index:
 
 ;------------------------------------------------------------------------
 ; searches through the index for a file that matches the name.
+; search is case insensitve.
 ; INPUT: Filename in sfs_fn_ptr (null terminated)
-;               search is case insenstive
 ; OUTPUT: C = 0 not found, C = 1 found
 ;------------------------------------------------------------------------
 sfs_find:
@@ -248,15 +246,10 @@ sfs_find:
         bcc @notfound
 @1:
         jsr sfs_read_next_index         ; reads the next index - sets sfs_ptr to next
-@1a:
-        jsr match_name
-        bcs @found
-@1b:
-        jsr sfs_read_next_index
         bcc @notfound
         jsr match_name
         bcs @found
-        bra @1b
+        bra @1
 @found:
         sec
         rts
@@ -291,9 +284,9 @@ sfs_allocate_new_index_block:
         inx
         cpx #32         ; volid is only 24 bytes long but I write 32 anyway.
         bne @1
-        ; jsr sfs_dump_volid
+
         jsr sdcard_write_sector ; flush
-        ; now load the sector again.
+        ; now load the current index sector again.
         lda current_idx_lba + 0
         sta sector_lba + 0
         lda current_idx_lba + 1
@@ -303,6 +296,7 @@ sfs_allocate_new_index_block:
         lda current_idx_lba + 3
         sta sector_lba + 3
         jsr sdcard_read_sector
+
         lda #<sector_buffer
         sta sfs_ptr
         lda #>sector_buffer
@@ -317,16 +311,16 @@ sfs_allocate_new_index_block:
         rts
 
 ;------------------------------------------------------------------------
-; searches through index for a free index.
-; when it finds one, it adds the data start location into the index
-; and updates it on disk.
+; searches through index sectors for a free index.
 ;------------------------------------------------------------------------
 sfs_find_free_index:
         jsr sfs_open_first_index_block
 @1:
         jsr sfs_read_next_index
         bcc @endofindex
-        lda index + sIndex::filename + 0        ; if first char is 0x00 then it's free
+        lda index + sIndex::attrib      ; attribute 0x00 = not used
+        beq @found                      ; attribute 0xFF = deleted / free
+        cmp #$FF
         beq @found
         bra @1
 @found:
@@ -335,9 +329,6 @@ sfs_find_free_index:
         ; before failing for real, see if we can't allocate another index block
         jsr sfs_allocate_new_index_block
         bcc @endofindex2
-        jsr sfs_read_next_index
-        lda index + sIndex::filename + 0
-        beq @found
         bra @1
 @endofindex2:
         lda #ERRNO_END_OF_INDEX_ERROR
@@ -349,7 +340,7 @@ sfs_find_free_index:
 ; calls find to see if file exists.  If it does, load index struct and
 ; return success.
 ; sfs_fn_ptr points to null terminated file name to find.
-; returns with index populated and sfs_tmp_ptr pointing to index location
+; returns with index populated and sfs_ptr pointing to index location
 ; in sector_buffer
 ;------------------------------------------------------------------------
 sfs_create:
@@ -379,11 +370,11 @@ sfs_create:
         lda #$40
         sta index + sIndex::attrib
 @exit:
-        ; check if our index is greater than the volume last index
         rts
 
 ;------------------------------------------------------------------------
-; write sfs_bytes_rem bytes from sfs_data_ptr into open file.
+; first save open index back to disk then
+; write sfs_bytes_rem bytes to disk starting at sfs_data_ptr
 ;------------------------------------------------------------------------
 sfs_write:
         ; update the index and flush it to disk.
@@ -661,28 +652,3 @@ sfs_dump_volid:
         jsr primm
         .byte 10,13,0
         rts
-
-
-;------------------------------------------------------------------------
-; Print immediate
-;------------------------------------------------------------------------
-primm:
-      pla
-      sta   krn_ptr1
-      pla
-      sta   krn_ptr1+1
-      bra   @primm3
-@primm2:
-      jsr   acia_putc
-@primm3:
-      inc   krn_ptr1
-      bne   @primm4
-      inc   krn_ptr1+1
-@primm4:
-      lda   (krn_ptr1)
-      bne   @primm2
-      lda   krn_ptr1+1
-      pha
-      lda   krn_ptr1
-      pha
-      rts

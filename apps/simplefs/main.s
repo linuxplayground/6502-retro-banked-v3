@@ -113,10 +113,9 @@ cmd_mount:
         jsr sfs_read_next_index
         bcc @done
         lda index + sIndex::attrib
+        beq @done
         cmp #$FF
         beq @loop
-        lda index + sIndex::filename + 0
-        beq @done
         jsr @printline
         bra @loop  
 @done:
@@ -165,7 +164,7 @@ cmd_format:
 
 cmd_dump_volid:
         jsr sfs_dump_volid
-        rts
+        jmp prompt
 
 cmd_create:
 ;=========== DEBUG RETURN -----------

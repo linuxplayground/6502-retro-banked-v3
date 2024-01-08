@@ -72,20 +72,20 @@ sfs_format:
 @4:
         jsr populate_sector_buffer
         jsr sdcard_write_sector
+        lda #'.'
+        jsr acia_putc
         lda sector_lba + 0
-        jsr prbyte
+        and #$0F                ; print 16 '.' per line
+        bne @5
         jsr primm
-        .byte 10, 13, 0
+        .byte 10,13,0
+@5:
         inc sector_lba + 0
         beq @done
-        ; increment lba
-
-        dex
         bne @4
 @done:
-        lda #<strComplete
-        ldx #>strComplete
-        jsr acia_puts
+        jsr primm
+        .byte 10,13,"Format complete!",0
         rts
 
 populate_sector_buffer:
@@ -156,7 +156,7 @@ populate_sector_buffer:
         sec
         rts
 
-.segment "RODATA"
+.rodata
 VolumeID:       .byte "SFS.DISK"         ; 8 bytes volume ID
                 .byte "0001"             ; 4 bytes VERSION
                 .byte $80, $00, $00, $00 ; 4 bytes INDEX LBA
@@ -168,4 +168,3 @@ VolumeIDSig:    .byte $BB, $66
 
 strVolumeID:    .byte 10, 13, "Volume ID DONE"
                 .byte 10, 13, "Clearing Indexes", 0
-strComplete:    .byte 10, 13, "Format Complete", 10, 13, 0

@@ -1,12 +1,20 @@
-	.include "io.inc"
-	.include "sdcard.inc"
+;-----------------------------------------------------------------------------
+; SDCARD Routines adapted from: 
+;      	https://github.com/X16Community/x16-rom/blob/master/fat32/sdcard.s
+; 	Copyright (C) 2020 Frank van den Hoef
+;
+; SPI Routines from: 
+;       https://github.com/Steckschwein/code/blob/master/steckos/libsrc/spi/spi_rw_byte.s
+;  	Copyright (c) 2018 Thomas Woinke, Marko Lauke, www.steckschwein.de
+;-----------------------------------------------------------------------------
+.include "io.inc"
+.include "sdcard.inc"
 
-	.export sector_buffer, sector_buffer_end, sector_lba
+.export sector_buffer, sector_buffer_end, sector_lba
 
 SD_CS           = %00000010
 SD_SCK          = %00000001
 SD_MOSI         = %10000000
-; SD_MISO         = %00000010
 
 PORTA_OUTPUTPINS =  SD_CS | SD_SCK | SD_MOSI
 
@@ -216,12 +224,12 @@ sdcmd_start:
         php
 	pha
         phx
-        lda     #SD_MOSI
-        sta     via_portb
-        jsr     sdcmd_nothingbyte
-        jsr     sdcmd_nothingbyte
-        lda     #$ff
-        jsr     spi_write
+        lda #SD_MOSI
+        sta via_portb
+        jsr sdcmd_nothingbyte
+        jsr sdcmd_nothingbyte
+        lda #$ff
+        jsr spi_write
         plx
         pla
 	plp
@@ -230,24 +238,24 @@ sdcmd_start:
 sdcmd_nothingbyte:
         ldx     #8
 @loop:
-        lda     #(SD_MOSI|SD_CS)
-        sta     via_portb
-        lda     #(SD_SCK|SD_MOSI|SD_CS)
-        sta     via_portb
+        lda #(SD_MOSI|SD_CS)
+        sta via_portb
+        lda #(SD_SCK|SD_MOSI|SD_CS)
+        sta via_portb
         dex
-        bne     @loop
+        bne @loop
         rts
 
 sdcmd_end:
         php
 	pha
         phx
-        lda     #$ff
-        jsr     spi_write
-        jsr     sdcmd_nothingbyte
-        jsr     sdcmd_nothingbyte
-        lda     #(SD_CS|SD_MOSI)
-        sta     via_portb
+        lda #$ff
+        jsr spi_write
+        jsr sdcmd_nothingbyte
+        jsr sdcmd_nothingbyte
+        lda #(SD_CS|SD_MOSI)
+        sta via_portb
         plx
         pla
 	plp
@@ -258,16 +266,11 @@ sdcmd_end:
 ; result: C=0 -> error, C=1 -> success
 ;-----------------------------------------------------------------------------
 sdcard_init:
-        ; lda     #0
-        ; sta     via_porta
-        ; lda     #PORTA_OUTPUTPINS
-        ; sta     via_ddra
-
 	; init shift register and port b for SPI use
 	; SR shift in, External clock on CB1
 	lda #%00001100
 	sta via_acr
-	; disable VIA1 interrupts
+	; disable VIA interrupts
 	lda #%01111111			 ; bit 7 "0", to clear all int sources
 	; sta via_ier
 	; Port b bit 6 and 5 input for sdcard and write protect detection, rest all outputs

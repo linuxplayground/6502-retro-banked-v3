@@ -16,6 +16,9 @@ way as we did back in the 80s.  A great many elegancies of modern filesystems
 have been removed so that what's left is what I consider to be the bare minimum
 for a working and debuggable files system.
 
+- https://github.com/X16Community/x16-rom/tree/master/fat32
+- https://github.com/gfoot/sdcard6502
+
 Good luck!
 
 ## Features of the Simple File System
@@ -62,7 +65,10 @@ The filesystem has no way to close open files.
 
 INPUTS: NONE
 
-The format command will write a new 
+The format command will write a new VolumeID block to the first sector of the
+SD Card. The block data should be provided as per the details in the Physical
+Layout section towards the end of this document.  It will also allocate the
+`start` and `index_lba` fields for every directory index sector.
 
 **sfs_mount**
 
@@ -78,19 +84,6 @@ INPUTS: NONE
 All the files are enumerated in sectors `00000080 - 000000FF` on the SD Card.
 This command loads sector `00000080` into the sector buffer and moves the
 buffer pointer to the front of the buffer.
-
-**sfs_open_next_index_block**
-
-INPUTS: NONE
-
-Usually used internally by the filesystem when search for a free index or an
-existing file.  It will load the next highest index block from the SD Card and
-will return an error if the next index block is greater than the value of
-`index_last` recorded in the Volume ID.
-
-_Note: There is an internal function called **sfs_alloate_index_block** which
-will increment the value of `last_index` in the VolumeID up to FF being the end
-of index storage on the SD Card_
 
 **sfs_read_index**
 
@@ -115,6 +108,8 @@ that file if it exists.  If the file is not found, then the command will search
 for a new directory index or a directory index that has been previously marked
 as deleted and return that instead.
 
+_Note: The index is not saved to disk until `sfs_write`._
+
 **sfs_write**
 
 INPUTS: 
@@ -136,7 +131,7 @@ INPUTS:
   file int.
 
 This command will copy all the bytes of data defined by the `size` attribute of
-the file's directory index into memory starting at `sfs_data_ptr`
+the file's directory index into memory starting at `sfs_data_ptr`.
 
 **sfs_delete**
 
@@ -187,22 +182,22 @@ VolumeID:       .byte "SFS.DISK"         ; 8 bytes volume ID
                 .byte $80, $00, $00, $00 ; 4 bytes INDEX LBA
                 .byte $80, $00, $00, $00 ; 4 bytes LAST INDEX LBA
                 .byte $00, $01, $00, $00 ; 4 BYTES DATA START LBA
-V
 ```
 
 - id: ASCII Text.
 - version: currently the filesystem version is defined as `0001` in ASCII.
-- index_start: 32 bit address of the starting sector of the directory index sectors.
-- index_last: 32 bit address of the last currently used sector of the directory
-  index sectors.
-- data_start: the first sector in which data is stored.  Note that the format
+- `index_start`: 32 bit address of the starting sector of the directory index
+  sectors.
+- `index_last`: 32 bit address of the last currently used sector of the
+  directory index sectors.
+- `data_start`: the first sector in which data is stored.  Note that the format
   function pre-allocates all the data start locations in the index table.
 
 ### Index Structure
 
 The index structure defines details of a file.  Note that the format command
 will pre-define both the `start` and `index_lba` values for each possible index
-in hte filesystem.
+in the filesystem.
 
 ```
 .struct sIndex
@@ -214,12 +209,13 @@ in hte filesystem.
 .endstruct
 ```
 
-- filename: ASCII text, max 21 chars and must be right padded with spaces (0x20)
-- attrib: 0x40 file in use, 0xFF file is deleted.
-- start: 32 bit sector address of start of data.  Predefined by format.
-- index_lba: 32 bit sector address of the SD Card block containing this particular
-  index.
-- size: 16Bit size of file in bytes.
+- `filename`: ASCII text, max 21 chars and must be right padded with spaces
+  (0x20)
+- `attrib`: 0x40 file in use, 0xFF file is deleted.
+- `start`: 32 bit sector address of start of data.  Predefined by format.
+- `index_lba`: 32 bit sector address of the SD Card block containing this
+  particular index.
+- `size`: 16Bit size of file in bytes.
 
 **Notes on index management**
 

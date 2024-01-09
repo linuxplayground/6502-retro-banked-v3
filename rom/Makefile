@@ -36,12 +36,13 @@ KERN_SOURCES = \
 	$(DRIVER_SOURCES)
 
 SFS_SOURCES  = \
+	sfs/sdcard.s \
 	sfs/format.s \
 	sfs/match.s \
-	sfs/sdcard.s \
 	sfs/sfs.s
 
 MONITOR_SOURCES = \
+	$(SFS_SOURCES) \
 	monitor/doszp.s \
 	monitor/dosmem.s \
 	monitor/dos.s \
@@ -51,24 +52,14 @@ MONITOR_SOURCES = \
 	monitor/mon.s \
 	monitor/wozmon.s \
 	monitor/xmodem.s \
-	$(KERN_SOURCES) \
-	$(SFS_SOURCES)
+	$(KERN_SOURCES)
 
 BASIC_SOURCES = \
 	kern/kernzp.s \
 	basic/min_mon.s
 
-FAT32_SOURCES = \
-	fat32/fat32.s \
-	fat32/mkfs.s \
-	fat32/sdcard.s \
-	fat32/text_input.s \
-	fat32/match.s \
-	fat32/main.s
-
 MONITOR_OBJS = $(addprefix $(BUILD_DIR)/, $(MONITOR_SOURCES:.s=.o))
 BASIC_OBJS   = $(addprefix $(BUILD_DIR)/, $(BASIC_SOURCES:.s=.o))
-FAT32_OBJS   = $(addprefix $(BUILD_DIR)/, $(FAT32_SOURCES:.s=.o))
 
 BANK_BINS = \
 	$(BUILD_DIR)/monitor.bin \

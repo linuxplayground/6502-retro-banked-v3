@@ -9,4 +9,4 @@
         /* Kernel memory routines */
         KERNRAM:  start = $0200, size = $0100, file="";
         DOSDAT:   start = $B000, size = $0500;
-        F32DAT:   start = $B500, size = $0A00;
+

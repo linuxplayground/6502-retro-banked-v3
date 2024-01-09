@@ -8,10 +8,10 @@
 .global sfs_write
 .global sfs_read
 .global sfs_delete
-
-.global sfs_dump_volid
-
 .global sfs_format
+.global sfs_open
+.global sfs_close
+.global sfs_read_byte
 
 ; data
 .global index
@@ -20,3 +20,11 @@
 
 ; zeropage
 .globalzp sfs_ptr, sfs_fn_ptr, sfs_data_ptr
+
+ERRNO_OK                        = $00
+ERRNO_DISK_ERROR                = $01
+ERRNO_SECTOR_READ_FAILED        = $02
+ERRNO_SECTOR_WRITE_FAILED       = $03
+ERRNO_END_OF_INDEX_ERROR        = $04
+ERRNO_FILE_NOT_FOUND_ERROR      = $05
+ERRNO_INVALID_MODE_ERROR        = $06

@@ -38,6 +38,7 @@ error_ptrs:
         .addr strERRNO_SECTOR_WRITE_FAILED
         .addr strERRNO_END_OF_INDEX_ERROR
         .addr strERRNO_FILE_NOT_FOUND_ERROR
+	.addr strERRNO_INVALID_MODE_ERROR
 
 strERRNO_OK:                    .asciiz "OK"
 strERRNO_DISK_ERROR:            .asciiz "Bad DISK error"
@@ -45,3 +46,4 @@ strERRNO_SECTOR_READ_FAILED:    .asciiz "Sector read failed"
 strERRNO_SECTOR_WRITE_FAILED:   .asciiz "Sector write failed"
 strERRNO_END_OF_INDEX_ERROR:    .asciiz "End of index sectors"
 strERRNO_FILE_NOT_FOUND_ERROR:  .asciiz "File not found"
+strERRNO_INVALID_MODE_ERROR:	.asciiz "Invalid file mode"

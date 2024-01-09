@@ -17,17 +17,13 @@
 ; sfs_data_ptr    = $C4
 ; ;                 $C5
 
-ERRNO_OK                        = $00
-ERRNO_DISK_ERROR                = $01
-ERRNO_SECTOR_READ_FAILED        = $02
-ERRNO_SECTOR_WRITE_FAILED       = $03
-ERRNO_END_OF_INDEX_ERROR        = $04
-ERRNO_FILE_NOT_FOUND_ERROR      = $05
 
 .bss
 current_idx_lba:           .dword 0
 data_start:                .dword 0
 sfs_read_first_index_flag: .byte 0
+sfs_context:               .byte 0
+sfs_tmp:                   .byte 0
 
 .code
 
@@ -426,21 +422,27 @@ sfs_write:
         lda (sfs_data_ptr)      ; save a byte
         sta (sfs_ptr)
 
-        lda sfs_bytes_rem       ; decrement bytes_rem until zero
-        bne @3b
-        lda sfs_bytes_rem + 1
-        beq @5                  ; done
+        lda sfs_bytes_rem
+        bne :+
         dec sfs_bytes_rem + 1
-@3b:    dec sfs_bytes_rem
+:       dec sfs_bytes_rem
 
-        inc sfs_data_ptr        ; increment data pointer
+        lda sfs_bytes_rem
+        ora sfs_bytes_rem + 1
+        bne :+
+        bra @5                  ; end of file reached.
+
+:       inc sfs_data_ptr        ; increment data pointer
         bne @3c
         inc sfs_data_ptr + 1
 
-@3c:    inc sfs_ptr             ; increment buffer pointer
-        bne @3a
-        inc sfs_ptr+1
-        lda sfs_ptr+1
+@3c:    clc
+        lda sfs_ptr
+        adc #1
+        sta sfs_ptr
+        lda sfs_ptr + 1
+        adc #0
+        sta sfs_ptr + 1
         cmp #>sector_buffer_end ; if end of buffer - flush to disk.
         beq @4
         bra @3a
@@ -577,6 +579,173 @@ sfs_delete:
         sta sector_lba + 3
         jmp sdcard_write_sector
 
+;------------------------------------------------------------------------
+; Open a file.
+; INPUTS:
+;       A=1, Open for read
+;       A=2, Open for write
+;       sfs_fn_ptr, null terminated filename
+; Finds an existing file and sets sfs context on success.
+;------------------------------------------------------------------------
+sfs_open:
+        pha     ; stash requested mode
+        jsr sfs_find
+        bcs :+
+        pla     ; reset stack
+        lda #ERRNO_FILE_NOT_FOUND_ERROR
+        sta sfs_errno
+        clc
+        rts
+:       pla     ; retreive mode
+        cmp #2  ; mode must be <= 2
+        bcs @error
+        sta sfs_context
+        ; get file size
+        lda index + sIndex::size + 0
+        sta sfs_bytes_rem + 0
+        lda index + sIndex::size + 1
+        sta sfs_bytes_rem + 1
+        jsr primm
+        .byte 10, 13, "FILE SIZE: ",0
+        lda sfs_bytes_rem + 1
+        jsr prbyte
+        lda sfs_bytes_rem + 0
+        jsr prbyte
+
+        ; set up start lba
+        lda index + sIndex::start + 0
+        sta sector_lba + 0
+        lda index + sIndex::start + 1
+        sta sector_lba + 1
+        lda index + sIndex::start + 2
+        sta sector_lba + 2
+        lda index + sIndex::start + 3
+        sta sector_lba + 3
+
+        jsr sdcard_read_sector
+        bcc @diskreaderror
+        lda #<sector_buffer
+        sta sfs_ptr
+        lda #>sector_buffer
+        sta sfs_ptr + 1
+
+        sec
+        rts
+@diskreaderror:
+        lda #ERRNO_SECTOR_READ_FAILED
+        sta sfs_errno
+        clc
+        rts
+@error:
+        lda #ERRNO_INVALID_MODE_ERROR
+        sta sfs_errno
+        clc
+        rts
+
+;------------------------------------------------------------------------
+; Close an open file.
+; Clears sfs_context.  
+; If context was created for writing:
+;       - Final buffer is written
+;       - index is updated and flushed to disk.
+;------------------------------------------------------------------------
+sfs_close:
+        lda sfs_context
+        cmp #$01
+        beq :+  ; if read mode just clear the context.
+        ;; here is where we need to write final buffer and update the
+        ;; the index 
+:       stz sfs_context
+        sec
+        rts
+
+;------------------------------------------------------------------------
+; Read Byte
+; Reads the next byte in an open file.  If the end of the file is reached
+; return C=0 and final byte in A.
+; Open a file with sfs_open before starting.
+;------------------------------------------------------------------------
+sfs_read_byte:
+        ; check context
+        lda sfs_context
+        cmp #$01
+        bne @modeerror
+        ; read and stach current byte
+        lda (sfs_ptr)
+        sta sfs_tmp
+
+        ; was increment the sfs_ptr
+        clc
+        lda sfs_ptr
+        adc #1
+        sta sfs_ptr
+        lda sfs_ptr + 1
+        adc #0
+        sta sfs_ptr + 1
+        cmp #>sector_buffer_end
+        bne @checkeof
+
+        clc
+        lda sector_lba + 0
+        adc #1
+        sta sector_lba + 0
+        lda sector_lba + 1
+        adc #0
+        sta sector_lba + 1
+        lda sector_lba + 2
+        adc #0
+        sta sector_lba + 2
+        lda sector_lba + 3
+        adc #0
+        sta sector_lba + 3
+        
+        jsr sdcard_read_sector
+        bcc @diskreaderror
+
+        ; jsr debug_sector_lba
+        jsr primm
+        .byte 10, 13, 0
+
+        lda #<sector_buffer     ; reset buffer pointer
+        sta sfs_ptr
+        lda #>sector_buffer
+        sta sfs_ptr + 1
+
+@checkeof:
+        ; check for eof
+        lda sfs_bytes_rem
+        bne :+
+        dec sfs_bytes_rem + 1
+:       dec sfs_bytes_rem
+
+        lda sfs_bytes_rem + 0
+        ora sfs_bytes_rem + 1
+        bne :+
+        jmp @eof
+:
+        lda sfs_tmp
+        sec
+        rts
+@eof:
+        lda #ERRNO_OK
+        sta sfs_errno
+        lda sfs_tmp
+        clc
+        rts
+@modeerror:
+        lda #ERRNO_INVALID_MODE_ERROR
+        sta sfs_errno
+        clc
+        rts
+@diskreaderror:
+        lda #ERRNO_SECTOR_READ_FAILED
+        sta sfs_errno
+        clc
+        rts
+
+;------------------------------------------------------------------------
+; Print out the current SDCARD LBA Address
+;------------------------------------------------------------------------
 debug_sector_lba:
         jsr primm
         .byte 10,13,"SECTOR_LBA: ",0
@@ -588,63 +757,4 @@ debug_sector_lba:
         jsr prbyte
         lda sector_lba + 0
         jsr prbyte
-        rts
-;------------------------------------------------------------------------
-; print out details of the volume id
-;------------------------------------------------------------------------
-sfs_dump_volid:
-        jsr primm
-        .byte 10, 13, "VOLUME ID:   ",0
-        ldx #0
-@1:
-        lda volid + sVolId::id,x
-        jsr acia_putc
-        inx
-        cpx #8
-        bne @1
-
-        jsr primm
-        .byte 10, 13, "VERSION:     ",0
-        ldx #0
-@2:
-        lda volid + sVolId::version, x
-        jsr acia_putc
-        inx
-        cpx #4
-        bne @2
-
-        jsr primm
-        .byte 10, 13, "INDEX START: ",0
-        lda volid + sVolId::index_start + 3
-        jsr prbyte
-        lda volid + sVolId::index_start + 2
-        jsr prbyte
-        lda volid + sVolId::index_start + 1
-        jsr prbyte
-        lda volid + sVolId::index_start + 0
-        jsr prbyte
-
-        jsr primm
-        .byte 10, 13, "INDEX LAST:  ",0
-        lda volid + sVolId::index_last + 3
-        jsr prbyte
-        lda volid + sVolId::index_last + 2
-        jsr prbyte
-        lda volid + sVolId::index_last + 1
-        jsr prbyte
-        lda volid + sVolId::index_last + 0
-        jsr prbyte
-
-        jsr primm
-        .byte 10, 13, "DATA START:  ",0
-        lda volid + sVolId::data_start + 3
-        jsr prbyte
-        lda volid + sVolId::data_start + 2
-        jsr prbyte
-        lda volid + sVolId::data_start + 1
-        jsr prbyte
-        lda volid + sVolId::data_start + 0
-        jsr prbyte
-        jsr primm
-        .byte 10,13,0
         rts

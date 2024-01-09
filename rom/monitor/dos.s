@@ -158,7 +158,7 @@ cmd_dir:
 	newline
 	bra @2
 @not_found:
-	jsr convert_error
+	jmp convert_error
 @end:
 	rts
 
@@ -199,8 +199,7 @@ cmd_load:
 	bcc @error
 	rts
 @error:
-	jsr convert_error
-	rts
+	jmp convert_error
 
 cmd_save:
 	jsr consume_to_end_of_next_space
@@ -258,14 +257,58 @@ cmd_save:
 	bcc @error
 	rts
 @error:
-	jsr convert_error
-	rts
+	jmp convert_error
 
 cmd_unlink:
+	jsr consume_to_end_of_next_space
+	jsr read_path_from_input
+	lda #<path
+	sta sfs_fn_ptr
+	lda #>path
+	sta sfs_fn_ptr + 1
+	jsr sfs_find
+	bcc @error
+	jsr sfs_delete
+	bcc @error
 	rts
+@error:
+	jmp convert_error
 
 cmd_cat:
+	jsr consume_to_end_of_next_space
+	jsr read_path_from_input
+	lda #<path
+	sta sfs_fn_ptr
+	lda #>path
+	sta sfs_fn_ptr + 1
+        lda #1
+        jsr sfs_open
+        bcc @error
+
+        jsr primm
+        .byte 10, 13, 0
+
+@1:
+        jsr sfs_read_byte
+        bcc @close
+        jsr acia_putc
+        cmp #$0a
+        bne :+
+        lda #$0d
+        jsr acia_putc
+:
+	bra @1
+@close:
+        lda sfs_errno
+        cmp #ERRNO_OK
+        beq @done
+        jmp sfs_close
+@done:
+        jsr primm
+        .byte 10, 13, "END OF FILE",0
 	rts
+@error:
+	jmp convert_error
 
 cmd_run:
 	jsr $0800

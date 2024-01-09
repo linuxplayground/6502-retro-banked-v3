@@ -1,9 +1,5 @@
 .include "../../rom/inc/kern.inc"
-.include "../../rom/inc/banks.inc"
 .include "../../rom/inc/io.inc"
-
-ram_bank = $13
-rom_bank = $14
 
 .code
 main:

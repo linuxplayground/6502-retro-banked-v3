@@ -1,5 +1,5 @@
 .import acia_init, acia_getc, acia_getc_nw, acia_putc, acia_puts
-.import prbyte, beep
+.import prbyte, beep, primm
 
 .segment "JMPTBL"
 
@@ -10,3 +10,4 @@ jmp acia_putc
 jmp acia_puts
 jmp prbyte
 jmp beep
+jmp primm

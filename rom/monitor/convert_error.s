@@ -1,6 +1,6 @@
 .include "macros.inc"
 .include "kern.inc"
-.global strEndl, fat32_errno
+.global strEndl, sfs_errno
 .importzp ptr1
 
 .export convert_error
@@ -13,7 +13,7 @@ convert_error:
 	sta ptr1		; print.  Save into ptr1.
 	lda #>error_ptrs
 	sta ptr1 + 1
-	lda fat32_errno		; add the error number x 2 to the pointer
+	lda sfs_errno		; add the error number x 2 to the pointer
 	clc			; so that we are pointing at the corrent pointer.
 	asl
 	adc ptr1
@@ -31,32 +31,17 @@ convert_error:
 	rts
 
 .rodata
-
 error_ptrs:
-	.word strERRNO_OK
-	.word strERRNO_READ
-	.word strERRNO_WRITE
-	.word strERRNO_ILLEGAL_FILENAME
-	.word strERRNO_FILE_EXISTS
-	.word strERRNO_FILE_NOT_FOUND
-	.word strERRNO_FILE_READ_ONLY
-	.word strERRNO_DIR_NOT_EMPTY
-	.word strERRNO_NO_MEDIA
-	.word strERRNO_NO_FS
-	.word strERRNO_FS_INCONSISTENT
-	.word strERRNO_WRITE_PROTECT_ON
-	.word strERRNO_OUT_OF_RESOURCES
+        .addr strERRNO_OK
+        .addr strERRNO_DISK_ERROR
+        .addr strERRNO_SECTOR_READ_FAILED
+        .addr strERRNO_SECTOR_WRITE_FAILED
+        .addr strERRNO_END_OF_INDEX_ERROR
+        .addr strERRNO_FILE_NOT_FOUND_ERROR
 
-strERRNO_OK:			.asciiz "OK"
-strERRNO_READ:			.asciiz "READ ERROR"
-strERRNO_WRITE:			.asciiz "WRITE ERROR"
-strERRNO_ILLEGAL_FILENAME:	.asciiz "ILLEGAL FILENAME"
-strERRNO_FILE_EXISTS:		.asciiz "FILE EXISTS"
-strERRNO_FILE_NOT_FOUND:	.asciiz "FILE NOT FOUND"
-strERRNO_FILE_READ_ONLY:	.asciiz "FILE READ ONLY"
-strERRNO_DIR_NOT_EMPTY:		.asciiz "DIRECTORY NOT EMPTY"
-strERRNO_NO_MEDIA:		.asciiz "NO MEDIA"
-strERRNO_NO_FS:			.asciiz "NO FILESYSTEM"
-strERRNO_FS_INCONSISTENT:	.asciiz "FILESYSTEM INCONSISTENT"
-strERRNO_WRITE_PROTECT_ON:	.asciiz "WRITE PROTECT ON"
-strERRNO_OUT_OF_RESOURCES:	.asciiz "OUT OF RESOURCES"
+strERRNO_OK:                    .asciiz "OK"
+strERRNO_DISK_ERROR:            .asciiz "Bad DISK error"
+strERRNO_SECTOR_READ_FAILED:    .asciiz "Sector read failed"
+strERRNO_SECTOR_WRITE_FAILED:   .asciiz "Sector write failed"
+strERRNO_END_OF_INDEX_ERROR:    .asciiz "End of index sectors"
+strERRNO_FILE_NOT_FOUND_ERROR:  .asciiz "File not found"

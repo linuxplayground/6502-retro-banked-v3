@@ -9,3 +9,4 @@ acia_putc       = $FF09
 acia_puts       = $FF0C
 prbyte          = $FF0F
 beep            = $FF12
+primm           = $FF15

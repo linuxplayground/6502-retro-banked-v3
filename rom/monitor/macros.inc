@@ -17,9 +17,3 @@
 	plx
 	pla
 .endmacro
-
-.macro fat32_call func
-	jsr jsrfar
-	.word func
-	.byte FAT32_BANK
-.endmacro

@@ -1,6 +1,6 @@
 ; Converts fat32_size into binary encoded decimal
 
-.import fat32_size
+.import sfs_bytes_rem
 .import FORMAT_BUF
 .export BinToBcd
 
@@ -28,7 +28,7 @@ BinToBcd:
         iny
 skip:   dey
         beq done         ;the number is zero, we are done
-        lda fat32_size-1,y
+        lda sfs_bytes_rem-1,y
         beq skip
 
         sty num_size
@@ -37,7 +37,7 @@ skip:   dey
     ;--- Process one byte at a time
 next_byte:
         ldy num_size
-        lda fat32_size-1,y      
+        lda sfs_bytes_rem-1,y      
         sta b
         sec            ;set top bit of the mask to 1
         bcs loop      

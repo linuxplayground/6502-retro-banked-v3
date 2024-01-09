@@ -25,6 +25,7 @@ KERN_CORE_SOURCES = \
 	kern/kernzp.s \
 	kern/memory.s \
 	kern/beep.s \
+	kern/primm.s \
 	kern/jmptbl.s
 
 DRIVER_SOURCES = \
@@ -33,6 +34,12 @@ DRIVER_SOURCES = \
 KERN_SOURCES = \
 	$(KERN_CORE_SOURCES) \
 	$(DRIVER_SOURCES)
+
+SFS_SOURCES  = \
+	sfs/format.s \
+	sfs/match.s \
+	sfs/sdcard.s \
+	sfs/sfs.s
 
 MONITOR_SOURCES = \
 	monitor/doszp.s \
@@ -44,7 +51,8 @@ MONITOR_SOURCES = \
 	monitor/mon.s \
 	monitor/wozmon.s \
 	monitor/xmodem.s \
-	$(KERN_SOURCES)
+	$(KERN_SOURCES) \
+	$(SFS_SOURCES)
 
 BASIC_SOURCES = \
 	kern/kernzp.s \
@@ -64,8 +72,7 @@ FAT32_OBJS   = $(addprefix $(BUILD_DIR)/, $(FAT32_SOURCES:.s=.o))
 
 BANK_BINS = \
 	$(BUILD_DIR)/monitor.bin \
-	$(BUILD_DIR)/basic.bin \
-	$(BUILD_DIR)/fat32.bin
+	$(BUILD_DIR)/basic.bin
 
 GENERIC_DEPS = \
 	inc/io.inc
@@ -113,13 +120,6 @@ $(BUILD_DIR)/basic.bin: $(GIT_SIGNATURE) $(BASIC_OBJS) $(BASIC_DEPS) $(CFG_DIR)/
 	@mkdir -p $$(dirname $@)
 	$(LD) -C $(CFG_DIR)/basic.cfg $(BASIC_OBJS) -o $@ -m $(BUILD_DIR)/basic.map -Ln $(BUILD_DIR)/basic.sym
 	./scripts/relist.py $(BUILD_DIR)/basic.map $(BUILD_DIR)/basic
-
-# Bank 2 : FAT32
-$(BUILD_DIR)/fat32.bin: $(FAT32_OBJS) $(FAT32_DEPS) $(CFG_DIR)/fat32.cfg
-	@mkdir -p $$(dirname $@)
-	$(LD) -C $(CFG_DIR)/fat32.cfg $(FAT32_OBJS) -o $@ -m $(BUILD_DIR)/fat32.map -Ln $(BUILD_DIR)/fat32.sym \
-	`./findsymbols ${BUILD_DIR}/monitor.sym fat32_dirent fat32_errno fat32_readonly fat32_size skip_mask`
-	./scripts/relist.py $(BUILD_DIR)/fat32.map $(BUILD_DIR)/fat32
 
 minipro:
 	 minipro -s -p SST27SF512@DIP28 -w $(BUILD_DIR)/rom.bin

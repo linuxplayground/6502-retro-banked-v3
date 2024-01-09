@@ -1,8 +1,8 @@
-.include "../fat32/regs.inc"
 .include "kern.inc"
-.include "fat32.inc"
-.include "banks.inc"
 .include "macros.inc"
+.include "io.inc"
+.include "../sfs/structs.inc"
+.include "../sfs/sfs.inc"
 
 SD_CS           = %00000010
 SD_SCK          = %00000001
@@ -11,12 +11,13 @@ SD_MOSI         = %10000000
 .global strEndl
 .importzp ptr1, run_ptr, tmp1
 
-.import fat32_dirent, fat32_errno, fat32_size
+.import index, volid, sfs_errno, sfs_bytes_rem
+
 .import convert_error
 .import readline, readline_init
 .import BinToBcd, FORMAT_BUF
 .import inbuf, inbuf_end, context, load_arg, path, address, length
-.import jsrfar
+.import to_lower
 
 .export dos_init, strAnsiCLSHome
 
@@ -24,25 +25,12 @@ SD_MOSI         = %10000000
 dos_init:
 	jsr readline_init
 
-	fat32_call sdcard_init
-	fat32_call fat32_init
+	jsr sfs_init
 
 	print strAnsiCLSHome
 	newline
 	print strWelcome
 
-	jsr alloc_context
-
-; read a command and dispatch based on first char.
-; h => help
-; d => dir </path/to/directory> (also changes to that directory)
-; l => load </path/to/file> [0|1|2] - Default is 1
-;               0 = Load to 0x800 (file does not contain load address)
-;               1 = Load to address defined in first 2 bytes of file.
-;               2 = Load to 0x800 (ignores address in first 2 bytes of file)
-; s => save </path/to/file> <start_address> <size in bytes>
-; c => cat </path/to/textfile> - prints all printable chars from file until eof.
-; q => quit
 input_loop:
 	jsr readline
 	ldy #0
@@ -50,10 +38,10 @@ input_loop:
 	jsr to_lower
 	cmp #'h'
 	beq @jmp_help
-	cmp #'c'
-	beq @jmp_dir
 	cmp #'d'
 	beq @jmp_dir
+	cmp #'f'
+	beq @jmp_format
 	cmp #'l'
 	beq @jmp_load
 	cmp #'s'
@@ -73,6 +61,9 @@ input_loop:
 	jmp input_loop
 @jmp_dir:
 	jsr cmd_dir
+	jmp input_loop
+@jmp_format:
+	jsr cmd_format
 	jmp input_loop
 @jmp_load:
 	jsr cmd_load
@@ -109,125 +100,75 @@ cmd_help:
 	bne :-
 :	rts
 
-
 ; open_dir path
 ; lists directory
 ; closes directory
 cmd_dir:
+	jsr sfs_mount
+
 	; y is at first character
 	jsr consume_to_end_of_next_space
 	jsr read_path_from_input
-
-	jsr alloc_context
 
 	newline
 
 	lda path + 1			; is / the whole path
 	bne @1
-	fat32_call fat32_get_vollabel
 	lda #'['
 	jsr acia_putc
-	lda #<fat32_dirent + dirent::name
-	ldx #>fat32_dirent + dirent::name
-	jsr acia_puts
+	ldx #0
+:	lda volid + sVolId::id,x
+	jsr acia_putc
+	inx
+	cpx #8
+	bne :-
 	lda #']'
 	jsr acia_putc
 
 	newline
 @1:
-	lda #<path
-	sta fat32_ptr
-	lda #>path
-	sta fat32_ptr + 1
-	fat32_call fat32_chdir
-	stz fat32_ptr
-	stz fat32_ptr + 1
-	fat32_call fat32_open_dir
-	bcc @not_found
+	jsr sfs_open_first_index_block
 @2:
-	fat32_call fat32_read_dirent
+	jsr sfs_read_next_index
 	bcc @end
-	lda fat32_dirent + dirent::name
-	cmp #$E5
+	lda index + sIndex::attrib
+	beq @end
+	cmp #$FF
 	beq @2
-	; test attribute
-	lda fat32_dirent + dirent::attributes
-	cmp #$12
-	beq @2
-	cmp #$22
-	beq @2
-
-	cmp #$30
-	beq :+
-	cmp #$10		; is directory
-	bne @3
-:	lda #<strDirPrefix
-	ldx #>strDirPrefix
-	jsr acia_puts
-	jmp @4
 @3:
 	; print file size in hex
-	lda fat32_dirent + dirent::size + 1
-	sta fat32_size + 1
-	lda fat32_dirent + dirent::size + 0
-	sta fat32_size + 0
+	lda index + sIndex::size + 1
+	sta sfs_bytes_rem + 1
+	lda index + sIndex::size + 0
+	sta sfs_bytes_rem + 0
 	lda #2
 	jsr BinToBcd
 	jsr print_dec_buf
 	lda #' '
 	jsr acia_putc
 @4:
-	; print file or dir name
-	lda #<fat32_dirent + dirent::name
-	ldx #>fat32_dirent + dirent::name
-	jsr acia_puts
+	; print file name
+        ldx #0
+:       lda index + sIndex::filename,x
+        jsr acia_putc
+        inx
+        cpx #21
+        bne :-
 
 	newline
 	bra @2
 @not_found:
 	jsr convert_error
 @end:
-	newline
-	lda #<strFreeSpacePrefix
-	ldx #>strFreeSpacePrefix
-	jsr acia_puts
-	stz fat32_dirent + dirent::size
-	stz fat32_dirent + dirent::size + 1
-	stz fat32_dirent + dirent::size + 2
-	stz fat32_dirent + dirent::size + 3
-	fat32_call fat32_get_free_space
-	jsr get_units
-	pha
-	lda #2
-	jsr BinToBcd
-	jsr print_dec_buf
-	lda #' '
-	jsr acia_putc
-	pla
-	jsr acia_putc
-
-
-	fat32_call fat32_close
-	jsr free_context
 	rts
 
-; checks if a file
-; XXX This logic needs refining.
-; depending on the arguments, loads to the address:
-; 0 - given by first byte of the file
-; 1 - 800 straight direct ignoring potential address header in file
-; 2 - default - 800 ignoring the value of the first 2 bytes
 cmd_load:
 	; y is at first character
 	jsr consume_to_end_of_next_space
 	jsr read_path_from_input
-	; get the argument to load (read_path already consumes to the end of next space.)
 	iny
-	lda inbuf,y
-	sta load_arg
-
-	jsr alloc_context
-
+	jsr read_address_from_input
+	; print some information
 	newline
 	lda #<strLoading
 	ldx #>strLoading
@@ -238,97 +179,29 @@ cmd_load:
 	lda #<strOx
 	ldx #>strOx
 	jsr acia_puts
-
-	lda #<path
-	sta fat32_ptr
-	lda #>path
-	sta fat32_ptr + 1
-	fat32_call fat32_open
-	bcc @not_found1
-	lda fat32_dirent + dirent::attributes
-	cmp #$20
-	bne @not_found
-
-	lda load_arg
-	cmp #'0'
-	beq @0
-	cmp #'1'
-	beq @1
-	bra @2		; default is 2.
-@not_found1:
-	jsr convert_error
-	jmp @end
-@0:
-	lda #<str800
-	ldx #>str800
-	jsr acia_puts
-
-	stz fat32_ptr
-	stz run_ptr
-	lda #$08
-	sta fat32_ptr + 1
-	sta run_ptr + 1
-	bra @load
-@1:
-	; try to find the first 2 bytes of the file...
-	fat32_call fat32_read_byte
-	sta fat32_ptr
-	sta run_ptr
-	fat32_call fat32_read_byte
-	sta fat32_ptr + 1
-	sta run_ptr + 1
+	lda address + 1
 	jsr prbyte
-	lda fat32_ptr
+	lda address
 	jsr prbyte
-
-	lda #2
-	sta fat32_size
-	stz fat32_size + 1
-	stz fat32_size + 2
-	stz fat32_size + 3
-	fat32_call fat32_seek
-
-	bra @load
-@2:
-	lda #<str800
-	ldx #>str800
-	jsr acia_puts
-
-	lda #$fe
-	sta fat32_ptr
-	lda #$07
-	sta fat32_ptr + 1
-	stz run_ptr
-	lda #$08
-	sta run_ptr + 1
-	bra @load
-@not_found:
-	jsr convert_error
-	jmp @end
-@load:
-	; load the size.  Read will not read past end of file.
-	lda fat32_dirent + dirent::size
-	sta fat32_size
-	lda fat32_dirent + dirent::size + 1
-	sta fat32_size + 1
-
-	; read the rest of the file.
-	stz krn_ptr1		; do not write to single location.
-	fat32_call fat32_read
-	bcc @not_found
-@loaded:
 	newline
-	lda #<strOK
-	ldx #>strOK
-	jsr acia_puts
-@end:
-	fat32_call fat32_close
-	jsr free_context
+	; find file
+	lda #<path
+	sta sfs_fn_ptr
+	lda #>path
+	sta sfs_fn_ptr + 1
+	lda address
+	sta sfs_data_ptr
+	lda address + 1
+	sta sfs_data_ptr + 1
+	jsr sfs_find
+	bcc @error
+	jsr sfs_read
+	bcc @error
+	rts
+@error:
+	jsr convert_error
 	rts
 
-; save memory to the SDCARD
-; save filename.ext $start_addr $size (values in hex)
-;
 cmd_save:
 	jsr consume_to_end_of_next_space
 	jsr read_path_from_input
@@ -336,7 +209,6 @@ cmd_save:
 	jsr read_address_from_input
 	iny
 	jsr read_length_from_input
-
 	; print out some information
 	lda #<strSaving
 	ldx #>strSaving
@@ -367,111 +239,48 @@ cmd_save:
 	lda address
 	jsr prbyte
 	; create file
-
 	lda #<path
-	sta fat32_ptr
+	sta sfs_fn_ptr + 0
 	lda #>path
-	sta fat32_ptr + 1
-	jsr alloc_context
-	sec
-	fat32_call fat32_create
-	bcc @end
-	lda #'.'
-	jsr acia_putc	; file created
-
-	; save file
+	sta sfs_fn_ptr + 1
+	jsr sfs_create
+	bcc @error
+	; write the file
 	lda address
-	sta fat32_ptr
+	sta sfs_data_ptr
 	lda address + 1
-	sta fat32_ptr + 1
+	sta sfs_data_ptr + 1
 	lda length
-	sta fat32_size
+	sta sfs_bytes_rem
 	lda length + 1
-	sta fat32_size + 1
-	lda #0
-	sta krn_ptr1   ; fat32_read examines it to determine which copy routine to use.
-	fat32_call fat32_write
-	lda #'.'
-	jsr acia_putc	; file created
+	sta sfs_bytes_rem + 1
+	jsr sfs_write
+	bcc @error
+	rts
+@error:
 	jsr convert_error
-@end:
-	fat32_call fat32_close
-	jsr convert_error
-	jsr free_context
 	rts
 
 cmd_unlink:
-	; y is at first character
-	jsr consume_to_end_of_next_space
-	jsr read_path_from_input
-	jsr alloc_context
-	lda #<path
-	sta fat32_ptr
-	lda #>path
-	sta fat32_ptr + 1
-	fat32_call fat32_delete
-	jsr free_context
-	jsr convert_error
 	rts
 
 cmd_cat:
-	; y is at first character
-	jsr consume_to_end_of_next_space
-	jsr read_path_from_input
-
-	jsr alloc_context
-
-	newline
-	lda #<strLoading
-	ldx #>strLoading
-	jsr acia_puts
-	lda #<path
-	ldx #>path
-	jsr acia_puts
-
-	lda #<path
-	sta fat32_ptr
-	lda #>path
-	sta fat32_ptr + 1
-	fat32_call fat32_open
-	bcc @not_found
-	newline
-	lda fat32_dirent + dirent::attributes
-	cmp #$20
-	bne @not_found
-@1:
-	fat32_call fat32_read_byte
-	bcc @end
-	jsr acia_putc
-	cmp #$0A
-	bne :+
-	lda #$0D
-	jsr acia_putc
-: 	bra @1
-	bra @end
-@not_found:
-	jmp convert_error
-@end:
-	fat32_call fat32_close
-	jsr free_context
 	rts
 
 cmd_run:
-	jmp (run_ptr)
+	jsr $0800
+	rts
 
-
-
-;; SUPPORTING FUNCTIONS
-to_lower:
-	; Lower case character?
-	cmp #'A'
-	bcc @done
-	cmp #'Z'+1
-	bcs @done
-
-	; Make lowercase
-	ora #$20
-@done:	rts
+cmd_format:
+	lda #<strAreYouSure
+	ldx #>strAreYouSure
+	jsr acia_puts
+	jsr acia_getc
+	cmp #'Y'
+	bne @end
+	jsr sfs_format
+@end:
+	rts
 
 consume_to_end_of_next_space:
 	lda inbuf,y
@@ -547,16 +356,6 @@ read_length_from_input:
 	sta length
 	rts
 
-alloc_context:
-	fat32_call fat32_alloc_context
-	sta context
-	fat32_call fat32_set_context
-	rts
-
-free_context:
-	lda context
-	fat32_call fat32_free_context
-	rts
 
 ; prints zero terminated binary encoded decimal buffer.
 print_dec_buf:
@@ -590,49 +389,9 @@ print_dec_buf:
 	bne :-
 	rts
 
-get_units:
-	lda fat32_size + 2
-	ora fat32_size + 3
-	bne @not_kb
-	lda #'K'
-	bra @done_units
-@not_kb:
-	jsr shr10
-	lda fat32_size + 2
-	bne @not_mb
-	lda #'M'
-	bra @done_units
-@not_mb:
-	jsr shr10
-	lda #'G'
-@done_units:
-	rts
-
-shr10:
-	; >> 8
-	lda fat32_size + 1
-	sta fat32_size + 0
-	lda fat32_size + 2
-	sta fat32_size + 1
-	lda fat32_size + 3
-	sta fat32_size + 2
-	stz fat32_size + 3
-
-	; >> 2
-	lsr fat32_size + 2
-	ror fat32_size + 1
-	ror fat32_size + 0
-	lsr fat32_size + 2
-	ror fat32_size + 1
-	ror fat32_size + 0
-
-	rts
-
 end:
-	fat32_call fat32_close
-	jsr free_context
         lda #(SD_CS|SD_MOSI)        	; deselect sdcard
-        sta via_porta
+        sta via_portb
 	rts
 
 ; A = high nibble, X = low nibble
@@ -667,12 +426,11 @@ strFrom:		.asciiz " from 0x"
 strBytes: 		.asciiz "] bytes "
 strOK:			.byte " - OK", $0a, $0d, $0
 strDirPrefix:		.asciiz " [DIR] "
+strAreYouSure:		.asciiz "Are you sure? <Y|*> "
 strEndl:     	 	.byte $0a, $0d, $0
 strAnsiCLSHome:  	.byte $0D,$0A, $1b, "[2J", $1b, "[H", $0
 str800:			.asciiz "800"
 strOx:			.asciiz " into 0x"
-strFreeSpacePrefix:	.asciiz " Free Space: "
-strFreeSpaceSuffix:	.asciiz " KB"
 strSpace:		.asciiz "  "
 
 strHelp:
@@ -680,13 +438,10 @@ strHelp:
 	.byte "USAGE INSTRUCTIONS", $0a,$0d
 	.byte "==============================================================================",$0a,$0d
 	.byte "h => help", $0a,$0d
-	.byte "d => dir </path/to/directory> (also changes to that directory)", $0a,$0d
-	.byte "c => As above - muscle memory needs cd to work", $0a, $0d
-	.byte "l => load </path/to/file> [0|1|2] - Default is 1", $0a,$0d
-	.byte "    0 = Load to 0x800 (file does not contain load address)", $0a,$0d
-	.byte "    1 = Load to address defined in first 2 bytes of file.", $0a,$0d
-	.byte "    2 = Load to 0x800 (ignores address in first 2 bytes of file)", $0a,$0d
-	.byte "s => save </path/to/file> <start_address> <size in bytes>", $0a,$0d
-	.byte "t => cat </path/to/textfile> - prints all printable chars from file until eof.", $0a,$0d
+	.byte "d => dir - mount and list all files.", $0a,$0d
+	.byte "f => Format", $0a, $0d
+	.byte "l => load <filename> <start_address>", $0a, $0d
+	.byte "s => save <filename> <start_address> <size in bytes>", $0a,$0d
+	.byte "t => cat <filename> - prints all printable chars from file until eof.", $0a,$0d
 	.byte "q => quit",$0a,$0d
 	.byte "u => unlink",$0a,$0d,$0a,$0d,$0

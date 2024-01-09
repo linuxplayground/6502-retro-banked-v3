@@ -702,10 +702,6 @@ sfs_read_byte:
         jsr sdcard_read_sector
         bcc @diskreaderror
 
-        ; jsr debug_sector_lba
-        jsr primm
-        .byte 10, 13, 0
-
         lda #<sector_buffer     ; reset buffer pointer
         sta sfs_ptr
         lda #>sector_buffer

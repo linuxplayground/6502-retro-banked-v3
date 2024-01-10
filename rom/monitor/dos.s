@@ -281,6 +281,8 @@ cmd_cat:
 	sta sfs_fn_ptr
 	lda #>path
 	sta sfs_fn_ptr + 1
+	jsr sfs_find
+	bcc @error
         lda #1
         jsr sfs_open
         bcc @error
@@ -302,10 +304,12 @@ cmd_cat:
         lda sfs_errno
         cmp #ERRNO_OK
         beq @done
-        jmp sfs_close
+        jmp @error
 @done:
         jsr primm
         .byte 10, 13, "END OF FILE",0
+	jsr sfs_close
+	bcc @error
 	rts
 @error:
 	jmp convert_error

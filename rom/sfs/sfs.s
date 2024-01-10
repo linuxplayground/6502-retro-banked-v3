@@ -6,16 +6,8 @@
 .import sector_lba, sector_buffer, sector_buffer_end
 .import match_name
 
-.globalzp sfs_ptr, sfs_fn_ptr, sfs_data_ptr
+.globalzp sfs_ptr, sfs_fn_ptr, sfs_data_ptr, sfs_tmp_ptr
 .global sfs_errno, index, volid
-
-; ; zeropage addresses used
-; sfs_ptr         = $C0
-; ;                 $C1
-; sfs_fn_ptr      = $C2
-; ;                 $C3
-; sfs_data_ptr    = $C4
-; ;                 $C5
 
 
 .bss
@@ -351,8 +343,10 @@ sfs_create:
         beq @3
         bra @1
 @2:
-        lda #$20
+        lda #0
+        sta index + sIndex::filename, y
         iny
+        lda #$20
 @2a:
         sta index + sIndex::filename,y
         iny
@@ -588,30 +582,28 @@ sfs_delete:
 ; Finds an existing file and sets sfs context on success.
 ;------------------------------------------------------------------------
 sfs_open:
-        pha     ; stash requested mode
-        jsr sfs_find
-        bcs :+
-        pla     ; reset stack
-        lda #ERRNO_FILE_NOT_FOUND_ERROR
-        sta sfs_errno
-        clc
-        rts
-:       pla     ; retreive mode
         cmp #2  ; mode must be <= 2
+        beq @writemode
         bcs @error
+        ; read mode
         sta sfs_context
         ; get file size
         lda index + sIndex::size + 0
         sta sfs_bytes_rem + 0
         lda index + sIndex::size + 1
         sta sfs_bytes_rem + 1
-        jsr primm
-        .byte 10, 13, "FILE SIZE: ",0
-        lda sfs_bytes_rem + 1
-        jsr prbyte
-        lda sfs_bytes_rem + 0
-        jsr prbyte
-
+        bra @setuplba
+@writemode:
+        sta sfs_context
+        stz sfs_bytes_rem
+        stz sfs_bytes_rem + 1
+        ; sfs_ptr currently points to index location in index sector.
+        ; need to save it for close later on.
+        lda sfs_ptr
+        sta sfs_tmp_ptr
+        lda sfs_ptr + 1
+        sta sfs_tmp_ptr + 1
+@setuplba:
         ; set up start lba
         lda index + sIndex::start + 0
         sta sector_lba + 0
@@ -652,11 +644,65 @@ sfs_open:
 sfs_close:
         lda sfs_context
         cmp #$01
-        beq :+  ; if read mode just clear the context.
-        ;; here is where we need to write final buffer and update the
-        ;; the index 
-:       stz sfs_context
+        beq @reset_context  ; if read mode just clear the context.
+        ;; here is where we need to write final buffer 
+@fill:
+        inc sfs_ptr             ; fill rest of last sector with 0x00
+        bne @1
+        inc sfs_ptr + 1
+        lda sfs_ptr + 1
+        cmp #>sector_buffer_end
+        beq @2
+@1:     lda #0
+        sta (sfs_ptr)
+        bra @fill
+@2:
+        jsr sdcard_write_sector ; one last write
+        bcc @error
+        ; fall through
+@write_index:
+        lda sfs_bytes_rem
+        sta index + sIndex::size
+        lda sfs_bytes_rem + 1
+        sta index + sIndex::size + 1
+
+        ; load the index sector
+        lda index + sIndex::index_lba + 0
+        sta sector_lba + 0
+        lda index + sIndex::index_lba + 1
+        sta sector_lba + 1
+        lda index + sIndex::index_lba + 2
+        sta sector_lba + 2
+        lda index + sIndex::index_lba + 3
+        sta sector_lba + 3
+        jsr debug_sector_lba
+        jsr sdcard_read_sector
+        bcc @readerror
+        ; copy index into buffer
+        ldy #0
+@3:
+        lda index,y
+        sta (sfs_tmp_ptr),y
+        iny
+        cpy #32
+        bne @3
+
+        jsr sdcard_write_sector
+        bcc @error
+        ; fall through to close 
+@reset_context:
+        stz sfs_context
         sec
+        rts
+@readerror:
+        lda #ERRNO_SECTOR_READ_FAILED
+        sta sfs_errno
+        clc
+        rts
+@error:
+        lda #ERRNO_SECTOR_WRITE_FAILED
+        sta sfs_errno
+        clc
         rts
 
 ;------------------------------------------------------------------------
@@ -736,6 +782,82 @@ sfs_read_byte:
 @diskreaderror:
         lda #ERRNO_SECTOR_READ_FAILED
         sta sfs_errno
+        clc
+        rts
+
+;------------------------------------------------------------------------
+; Write Byte
+; Writes a byte to the next sequential position in the open file buffer.
+; If the end of the buffer is reached, then flush the buffer, set up the
+; the next LBA and reset the buffer pointer.
+; Index is written on close.
+; return C=0.
+; Open a file with sfs_open before starting.
+;------------------------------------------------------------------------
+sfs_write_byte:
+        pha             ; stash received byte
+        ; check context
+        lda sfs_context
+        cmp #2        ; 02 for write mode
+        bne @modeerror
+        pla             ; restore received byte
+        pha             ; stash it again
+        sta (sfs_ptr)   ; save to buffer
+
+        ; now increment sfs_bytes_rem
+        clc
+        lda sfs_bytes_rem
+        adc #1
+        sta sfs_bytes_rem
+        lda sfs_bytes_rem + 1
+        adc #0
+        sta sfs_bytes_rem + 1
+
+        ; now increment ptr and check for buffer overflow
+        clc
+        lda sfs_ptr
+        adc #1
+        sta sfs_ptr
+        lda sfs_ptr + 1
+        adc #0
+        sta sfs_ptr + 1
+        cmp #>sector_buffer_end
+        bne @nobufferoverflow
+        ; flush the buffer to disk
+        jsr sdcard_write_sector
+        ; increment next sector
+        clc
+        lda sector_lba + 0
+        adc #1
+        sta sector_lba + 0
+        lda sector_lba + 1
+        adc #0
+        sta sector_lba + 1
+        lda sector_lba + 2
+        adc #0
+        sta sector_lba + 2
+        lda sector_lba + 3
+        adc #0
+        sta sector_lba + 3
+        ; reset buffer pointer
+        lda #<sector_buffer
+        sta sfs_ptr
+        lda #>sector_buffer
+        sta sfs_ptr + 1
+@nobufferoverflow:
+        pla             ; return requested char
+        sec             ; success
+        rts
+@modeerror:
+        lda #ERRNO_INVALID_MODE_ERROR
+        sta sfs_errno
+        pla             ; return requested char
+        clc
+        rts
+@diskerror:
+        lda #ERRNO_SECTOR_WRITE_FAILED
+        sta sfs_errno
+        pla             ; return requested char
         clc
         rts
 

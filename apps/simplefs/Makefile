@@ -23,8 +23,7 @@ SFS_SOURCES = \
 	sdcard.s \
 	sfs.s \
 	format.s \
-	match.s \
-	functions.s
+	match.s
 SFS_OBJECTS = $(addprefix $(BUILD_DIR)/, $(SFS_SOURCES:.s=.o))
 
 all: clean $(BIN)

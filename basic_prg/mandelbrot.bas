@@ -1,4 +1,4 @@
-  50  CLS
+  50  PRINT CHR$(12);
   100 REM A BASIC, ASCII MANDELBROT
   110 REM
   120 REM This implementation copyright (c) 2019, Gordon Henderson

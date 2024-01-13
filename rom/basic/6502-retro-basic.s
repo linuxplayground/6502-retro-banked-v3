@@ -25,6 +25,7 @@ retro_bye:
         jmp     rstfar
 
 load:
+        rts
 save:
         rts
         

@@ -4,7 +4,6 @@
 .include "structs.inc"
 
 .global sector_buffer, sector_buffer_end, sector_lba
-.import primm
 
 .bss
 data_start: .dword 0

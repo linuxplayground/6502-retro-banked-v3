@@ -20,9 +20,8 @@ sfs_errno:      .byte 0             ;
 
 inbuf:          .res 128
 inbuf_end = *
-path:		    .res 128
-context:	    .byte 0
-load_arg:	    .byte 0
+path:		.res 128
+load_arg:	.byte 0
 address:        .word 0
 length:         .word 0
 FORMAT_BUF:     .res 16

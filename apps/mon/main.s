@@ -1,5 +1,6 @@
 .include "kern.inc"
-.include "../../rom/fat32/lib.inc"
+.include "lib/lib.inc"
+.include "io.inc"
 
 .import getline, hex_str_to_byte
 .import __BANK_START__
@@ -33,6 +34,7 @@ ptr2 = $F4
         lda #>dst
         sta src + 1
 .endmacro
+
 
 .code
         print_nl

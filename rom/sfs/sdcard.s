@@ -53,7 +53,7 @@ spi_sr:		.byte 0
 ; clobbers: A,X,Y
 ;-----------------------------------------------------------------------------
 wait_ready:
-	lda #2
+	lda #8
 	sta timeout_cnt
 
 @1:	ldx #0		; 2
@@ -75,6 +75,13 @@ wait_ready:
 	rts
 
 @done:	sec
+	rts
+
+; waits for sdcard to return anything other than FF
+wait_result:
+	jsr spi_read
+	cmp #$FF
+	beq wait_result
 	rts
 
 ; read a byte over SPI - result in A
@@ -451,6 +458,16 @@ sdcard_write_sector:
 	jsr spi_write
 	jsr spi_write
 
+	; wait for data response
+	jsr wait_result
+	and #$1f
+	cmp #$05
+	bne @error
+
+	; wait for it to be idle
+	jsr wait_ready
+	bcc @error
+	
 	; Success
 	jsr sdcmd_end
 	deselect

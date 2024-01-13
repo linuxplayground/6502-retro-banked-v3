@@ -3,8 +3,9 @@
 .include "sfs.inc"
 .include "structs.inc"
 .import sector_lba, sector_buffer, sector_buffer_end, index
+.import debug_sector_lba
 
-.import primm
+dos_ptr = $C8
 
 .bss
 cmdaddr: .dword 0; 4
@@ -19,6 +20,7 @@ cmdbuf: .res $100-5
         .byte 10, 13, "SIMPLE FILE SYSTEM (SFS)", 0
 
         jsr sdcard_init
+        jsr sfs_init
         jsr sfs_mount
 
         ; read user input
@@ -53,236 +55,154 @@ cmd_process:
 @parse:
         lda cmdbuf,x
         inx
-        cmp #'f'
-        beq @cmd_format
-        cmp #'c'
-        beq @cmd_create
-        cmp #'d'
-        beq @cmd_dump_sector
-        cmp #'e'
-        beq @cmd_erase
-        cmp #'i'
-        beq @cmd_dump_index
-        cmp #'l'
-        beq @cmd_load
-        cmp #'m'
-        beq @cmd_mount
-        cmp #'w'
-        beq @cmd_write
-        cmp #'r'
-        beq @cmd_read
-        cmp #'t'
-        beq @cmd_test
         cmp #'q'
-        beq @cmd_quit
-        cmp #'v'
-        beq @cmd_volid
+        bne :+
+        rts
+:
+        cmp #'d'
+        beq @jmp_cmd_dump_sector
+        cmp #'o'
+        beq @jmp_open
+        cmp #'r'
+        beq @jmp_read_byte
+        cmp #'c'
+        beq @jmp_close
+        cmp #'p'
+        beq @jmp_read_page
+        cmp #'w'
+        beq @jmp_write_page
+
         jmp prompt
-@cmd_format:
-        jmp cmd_format
-@cmd_create:
-        jmp cmd_create
-@cmd_dump_index:
-        jmp cmd_dump_index
-@cmd_erase:
-        jmp cmd_erase
-@cmd_dump_sector:
+@jmp_open:
+        jmp cmd_open
+@jmp_read_byte:
+        jmp cmd_read_byte
+@jmp_close:
+        jmp cmd_close
+@jmp_read_page:
+        jmp cmd_read_page
+@jmp_cmd_dump_sector:
         jmp cmd_dump_sector
-@cmd_mount:
-        jmp cmd_mount
-@cmd_load:
-        jmp cmd_load
-@cmd_write:
-        jmp cmd_write
-@cmd_read:
-        jmp cmd_read
-@cmd_test:
-        jmp cmd_test
-@cmd_volid:
-        jmp cmd_dump_volid
-@cmd_quit:
-        rts
+@jmp_write_page:
+        jmp cmd_write_page
 
-cmd_mount:
-        jsr sfs_mount
-        jsr cmd_dump_volid
-        jsr primm
-        .byte 10,13,"DIRECTORY SIZE ATR  NAME",10,13,0
-        jsr sfs_open_first_index_block
-@loop:
-        jsr sfs_read_next_index
-        bcc @done
-        lda index + sIndex::attrib
-        beq @done
-        cmp #$FF
-        beq @loop
-        jsr @printline
-        bra @loop  
-@done:
-        jmp prompt
-@printline:
-        lda index + sIndex::start + 3
-        jsr prbyte
-        lda index + sIndex::start + 2
-        jsr prbyte
-        lda index + sIndex::start + 1
-        jsr prbyte
-        lda index + sIndex::start + 0
-        jsr prbyte
-        jsr primm
-        .byte "  ",0
-        lda index + sIndex::size + 1
-        jsr prbyte
-        lda index + sIndex::size + 0
-        jsr prbyte
-        jsr primm
-        .byte "  ",0
-        lda index + sIndex::attrib
-        jsr prbyte
-        jsr primm
-        .byte "  ",0
-        ldx #0
-:       lda index + sIndex::filename,x
-        jsr acia_putc
-        inx
-        cpx #21
-        bne :-
-        jsr primm
-        .byte 10,13,0
-        rts
-
-
-cmd_format:
-        jsr primm
-        .byte 10, 13, "FORMAT:", 0
-        jsr sfs_format
-        jsr sdcard_init
-        jsr sfs_mount
-        bcs @1
-        jmp convert_error
-@1:
-
-cmd_dump_volid:
-        jsr sfs_dump_volid
-        jmp prompt
-
-cmd_create:
-;=========== DEBUG RETURN -----------
-        jsr primm
-        .byte 10, 13, "CREATE", 0
-
+cmd_open:
         lda #<strTestFile
         sta sfs_fn_ptr
         lda #>strTestFile
         sta sfs_fn_ptr + 1
 
         jsr sfs_create
-        bcs @2
-        jmp convert_error
-@2:
-        jmp prompt
-
-cmd_write:
-        jsr primm
-        .byte 10, 13, "WRITE DATA", 0
-
-        lda #$80
-        sta sfs_bytes_rem
-        lda #$00
-        sta sfs_bytes_rem + 1
-
-        lda #$00
-        sta sfs_data_ptr
-        lda #$b0
-        sta sfs_data_ptr + 1
-
-        jsr sfs_write
-        jmp prompt
-
-cmd_read:
-        jsr primm
-        .byte 10, 13, "READ BLOCK", 0
-@1:
-        lda cmdbuf,x
-        cmp #$20
-        bne @2
-        inx
-        bra @1
-@2:
-        pha                     ; save high nibble
-        txa
-        tay                     ; use y from now on.
-
-        iny
-        lda cmdbuf,y
-        tax
-        pla
-        jsr hex_str_to_byte
-        sta sector_lba + 3
-
-        iny
-        lda cmdbuf,y
-        pha
-        iny
-        lda cmdbuf,y
-        tax
-        pla
-        jsr hex_str_to_byte
-        sta sector_lba + 2
-
-        iny
-        lda cmdbuf,y
-        pha
-        iny
-        lda cmdbuf,y
-        tax
-        pla
-        jsr hex_str_to_byte
-        sta sector_lba + 1
-
-        iny
-        lda cmdbuf,y
-        pha
-        iny
-        lda cmdbuf,y
-        tax
-        pla
-        jsr hex_str_to_byte
-        sta sector_lba + 0
-
-        jsr sdcard_read_sector
-        jsr primm
-        .byte 10, 13, "READ ONE SECTOR: ",0
-        lda sector_lba + 3
-        jsr prbyte
-        lda sector_lba + 2
-        jsr prbyte
-        lda sector_lba + 1
-        jsr prbyte
-        lda sector_lba + 0
-        jsr prbyte
-        
-        jmp prompt
-
-cmd_load:
-        lda #<strTestFile
-        sta sfs_fn_ptr
-        lda #>strTestFile
-        sta sfs_fn_ptr + 1
-
-        jsr sfs_find
         bcc @error
-
-        lda #$00
-        sta sfs_data_ptr
-        lda #$80
-        sta sfs_data_ptr + 1
-
-        jsr sfs_read
+        lda #2
+        jsr sfs_open
         bcc @error
+        jsr debug_sector_lba
         jmp prompt
 @error:
         jmp convert_error
+
+cmd_read_byte:
+        jsr sfs_read_byte
+        bcc @error
+        sta (dos_ptr)
+        inc dos_ptr
+        bne :+
+        inc dos_ptr + 1
+:
+        jsr acia_putc
+        jsr primm
+        .byte 10, 13, 0
+        lda sfs_ptr + 1
+        jsr prbyte
+        lda sfs_ptr + 0
+        jsr prbyte
+
+        jmp prompt
+@error:
+        jmp convert_error
+
+cmd_read_page:
+        jsr primm
+        .byte 10, 13, 0
+
+        ldx #0
+@1:
+        jsr sfs_read_byte
+        bcc @close
+        jsr acia_putc
+        cmp #$0a
+        bne :+
+        lda #$0d
+        jsr acia_putc
+:       inx
+        bne @1
+        ldx #0
+@2:
+        jsr sfs_read_byte
+
+        bcc @close
+        jsr acia_putc
+        cmp #$0a
+        bne :+
+        lda #$0d
+        jsr acia_putc
+:       inx
+        bne @2
+@end:
+        jsr primm
+        .byte 10, 13, "BYTES REM: ",0
+        lda sfs_bytes_rem + 1
+        jsr prbyte
+        lda sfs_bytes_rem + 0
+        jsr prbyte
+        jmp prompt
+@close:
+        lda sfs_errno
+        cmp #ERRNO_OK
+        beq @done
+        jmp cmd_close
+@done:
+        jsr primm
+        .byte 10, 13, "END OF FILE",0
+        ; fall through
+cmd_close:
+        jsr sfs_close
+        jmp convert_error
+
+
+; writes 0 - 255  so that we fill half a sector.
+cmd_write_page:
+        lda #$20
+@loop:
+        jsr sfs_write_byte
+        bcc @error
+        inc
+        cmp #127
+        bne @loop
+        jmp prompt
+@error:
+        jmp convert_error
+
+
+convert_error:
+        jsr primm
+        .byte 10, 13, "ERROR: ", 0
+
+        lda #<strTable
+        sta sfs_ptr
+        lda #>strTable
+        sta sfs_ptr + 1
+
+        lda sfs_errno
+        asl
+        ldy #1
+        lda (sfs_ptr),y
+        tax
+        dey
+        lda (sfs_ptr),y
+        jsr acia_puts
+        jmp prompt
 
 cmd_dump_sector:
         jsr primm
@@ -322,147 +242,6 @@ cmd_dump_sector:
 @3:
         jmp prompt
 
-cmd_dump_index:
-        jsr primm
-        .byte 10, 13, "INDEX DATA:",0
-        ldx #0
-@1:
-        lda index + sIndex::filename,x
-        cmp #$20
-        bne :+
-        lda #'.'
-:
-        jsr acia_putc
-        inx
-        cpx #21
-        bne @1
-        jsr primm
-        .byte 10, 13, "ATTRIBUTE: ",0
-        lda index + sIndex::attrib
-        jsr prbyte
-
-        jsr primm
-        .byte 10, 13, "START: ",0
-
-        ldx #3
-@2:
-        lda index + sIndex::start,x
-        jsr prbyte
-        dex
-        bpl @2
-
-@3:
-        jsr primm
-        .byte 10, 13, "SIZE: ",0
-        ldx #1
-@3a:
-        lda index + sIndex::size,x
-        jsr prbyte
-        dex
-        bpl @3a
-@4:
-        jsr primm
-        .byte 10, 13, "INDEX LBA: ",0
-        ldx #3
-@4a:
-        lda index + sIndex::index_lba,x
-        jsr prbyte
-        dex
-        bpl @4a
-@5:
-        jmp prompt
-
-cmd_test:
-        ldx #16
-
-@1:
-        phx
-        jsr primm
-        .byte 10, 13, "CREATE", 0
-
-        lda #<strTestFile
-        sta sfs_fn_ptr
-        lda #>strTestFile
-        sta sfs_fn_ptr + 1
-
-        jsr sfs_create
-        bcs @2
-        jmp convert_error
-@2:
-        jsr primm
-        .byte 10, 13, "WRITE DATA", 0
-
-        lda #$80
-        sta sfs_bytes_rem
-        lda #$04
-        sta sfs_bytes_rem + 1
-
-        lda #$00
-        sta sfs_data_ptr
-        lda #$08
-        sta sfs_data_ptr + 1
-
-        jsr sfs_write
-        plx
-        dex
-        bne @1
-        jmp prompt        
-
-cmd_erase:
-        lda #<strTestFile
-        sta sfs_fn_ptr
-        lda #>strTestFile
-        sta sfs_fn_ptr + 1
-        jsr sfs_find
-        bcc convert_error
-        jsr sfs_delete
-        bcc convert_error
-        jmp prompt
-
-convert_error:
-
-        jsr primm
-        .byte 10, 13, "ERROR: ", 0
-
-        lda #<strTable
-        sta sfs_ptr
-        lda #>strTable
-        sta sfs_ptr + 1
-
-        lda sfs_errno
-        asl
-        ldy #1
-        lda (sfs_ptr),y
-        tax
-        dey
-        lda (sfs_ptr),y
-        jsr acia_puts
-        jmp prompt
-
-
-; A = high nibble, X = low nibble
-; result in A
-hex_str_to_byte:
-        jsr     @asc_hex_to_bin          ; convert to number - result is in A
-        asl                            ; shift to high nibble
-        asl
-        asl
-        asl
-        sta     tmp1                    ; and store
-        txa                             ; get the low nibble character
-        jsr     @asc_hex_to_bin          ; convert to number - result is in A
-        ora     tmp1                    ; OR with previous result
-        rts
-
-@asc_hex_to_bin:                        ; assumes ASCII char val is in A
-        sec
-        sbc     #$30                    ; subtract $30 - this is good for 0-9
-        cmp     #10                     ; is value more than 10?
-        bcc     @asc_hex_to_bin_end      ; if not, we're okay
-        sbc     #$07                    ; otherwise subtract another $07 for A-F
-@asc_hex_to_bin_end:
-        rts        
-
 .segment "RODATA"
 
 strTable:
@@ -472,6 +251,7 @@ strTable:
         .addr strERRNO_SECTOR_WRITE_FAILED
         .addr strERRNO_END_OF_INDEX_ERROR
         .addr strERRNO_FILE_NOT_FOUND_ERROR
+        .addr strERRNO_INVALID_MODE_ERROR
 
 strERRNO_OK:                    .asciiz "OK"
 strERRNO_DISK_ERROR:            .asciiz "Bad DISK error"
@@ -479,5 +259,6 @@ strERRNO_SECTOR_READ_FAILED:    .asciiz "Sector read failed"
 strERRNO_SECTOR_WRITE_FAILED:   .asciiz "Sector write failed"
 strERRNO_END_OF_INDEX_ERROR:    .asciiz "End of index sectors"
 strERRNO_FILE_NOT_FOUND_ERROR:  .asciiz "File not found"
+strERRNO_INVALID_MODE_ERROR:    .asciiz "Invalid file mode"
 
-strTestFile:    .asciiz "TESTFILE.TXT"
+strTestFile:    .asciiz "TEST4.BAS"

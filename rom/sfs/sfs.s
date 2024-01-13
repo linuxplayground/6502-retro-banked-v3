@@ -59,6 +59,23 @@ sfs_writesector:
 ; initialise the library.
 ;------------------------------------------------------------------------
 sfs_init:
+        lda #<sector_buffer
+        sta sfs_ptr
+        lda #>sector_buffer
+        sta sfs_ptr + 1
+:
+        lda #0                  ; clear out the dos data
+        sta (sfs_ptr)
+        clc
+        lda sfs_ptr
+        adc #1
+        sta sfs_ptr
+        lda sfs_ptr+1
+        adc #0
+        sta sfs_ptr+1
+        cmp #$C0
+        bne :-
+
         jmp sdcard_init
 
 ;------------------------------------------------------------------------
@@ -148,11 +165,11 @@ sfs_load_index_block:
         
         lda #ERRNO_OK
         sta sfs_errno
-        rts
+                rts
 @error:
         lda #ERRNO_SECTOR_READ_FAILED
         sta sfs_errno
-        rts
+                rts
 
 ;------------------------------------------------------------------------
 ; Reads the next index block into the sector buffer.  Checks against
@@ -166,7 +183,6 @@ sfs_open_next_index_block:
         sta current_idx_lba + 0
 
         beq @endofindex                 ; the index blocks go up to 00 00 00 FF
-        lda volid
         cmp volid + sVolId::index_last + 0 ; only looking at the LSB of the 32bit value
         bcc @endofindex
 @load:
@@ -231,6 +247,8 @@ sfs_find:
 @1:
         jsr sfs_read_next_index         ; reads the next index - sets sfs_ptr to next
         bcc @notfound
+        lda index + sIndex::attrib      ; if the attribute is empty, we must have
+        beq @notfound                   ; reached the end of all indexes.
         jsr match_name
         bcs @found
         bra @1
@@ -416,17 +434,14 @@ sfs_write:
         lda (sfs_data_ptr)      ; save a byte
         sta (sfs_ptr)
 
-        lda sfs_bytes_rem
-        bne :+
+        lda sfs_bytes_rem       ; decrement bytes_rem until zero
+        bne @3b
+        lda sfs_bytes_rem + 1
+        beq @5                  ; done
         dec sfs_bytes_rem + 1
-:       dec sfs_bytes_rem
+@3b:    dec sfs_bytes_rem
 
-        lda sfs_bytes_rem
-        ora sfs_bytes_rem + 1
-        bne :+
-        bra @5                  ; end of file reached.
-
-:       inc sfs_data_ptr        ; increment data pointer
+        inc sfs_data_ptr        ; increment data pointer
         bne @3c
         inc sfs_data_ptr + 1
 
@@ -647,19 +662,30 @@ sfs_close:
         beq @reset_context  ; if read mode just clear the context.
         ;; here is where we need to write final buffer 
 @fill:
-        inc sfs_ptr             ; fill rest of last sector with 0x00
-        bne @1
-        inc sfs_ptr + 1
+        clc
+        lda sfs_ptr
+        adc #1
+        sta sfs_ptr
         lda sfs_ptr + 1
+        adc #0
+        sta sfs_ptr + 1
         cmp #>sector_buffer_end
         beq @2
-@1:     lda #0
+        lda #0
         sta (sfs_ptr)
         bra @fill
 @2:
         jsr sdcard_write_sector ; one last write
         bcc @error
-        ; fall through
+                        ; fall through
+; @delay:
+;         ldy #0
+; :       ldx #0
+; :       inx
+;         bne :-
+;         iny
+;         bne :--
+
 @write_index:
         lda sfs_bytes_rem
         sta index + sIndex::size
@@ -675,7 +701,7 @@ sfs_close:
         sta sector_lba + 2
         lda index + sIndex::index_lba + 3
         sta sector_lba + 3
-        jsr debug_sector_lba
+        ; jsr debug_sector_lba
         jsr sdcard_read_sector
         bcc @readerror
         ; copy index into buffer

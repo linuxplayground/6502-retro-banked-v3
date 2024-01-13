@@ -8806,12 +8806,56 @@ no_save:                 ; empty save vector
     rts
 
 LAB_load:
+    lda #1      ; READ MODE
+    jsr open_file
+    bcc @oerror
+        tsx
+        inx
+        lda $100,x
+        sta SAVE_A
+        inx
+        lda $100,x
+        sta SAVE_Y
+
+        jsr LAB_1463    ; NEW
+
+        ; restore stack
+        lda SAVE_Y
+        pha
+        lda SAVE_A
+        pha
+
+        ; change input vector
+        lda #<fread
+        sta VEC_IN
+        lda #>fread
+        sta VEC_IN + 1
+
+        ; change output vector
+        lda #<dummyout
+        sta VEC_OUT
+        lda #>dummyout
+        sta VEC_OUT + 1
+
+    rts
+@oerror:
+      jsr primm
+      .byte 10,13,"OPEN ERROR ON LOAD",0
+      lda sfs_errno
+      jsr prbyte
+      rts
+@cerror:
+      jsr primm
+      .byte 10,13,"CLOSE ERROR ON LOAD: ",0
+      lda sfs_errno
+      jsr prbyte
       rts
 
 LAB_save:
     ;   jsr primm
     ;   .byte 10,13,"INDEX ADDRESS: ",0
 
+      lda #2            ; write mode
       jsr open_file
       bcc @oerror
 
@@ -8848,6 +8892,7 @@ LAB_save:
       rts
 
 open_file:
+    sta SAVE_A
       jsr sfs_init
       jsr sfs_mount
 
@@ -8869,6 +8914,9 @@ open_file:
       lda #0
       sta (sfs_fn_ptr),Y
 
+    lda SAVE_A
+    cmp #2
+    bne @find       ; skip creating if not writing.
       lda #'C'
       jsr acia_putc
       jsr sfs_create
@@ -8876,13 +8924,17 @@ open_file:
     ;   jsr dump_index
       
       bcc @cerror
-
+      bra @open
+@find:
+      jsr sfs_find
+      bcc @oerror
+@open:
       lda #'O'
       jsr acia_putc
-      lda #2
+      lda SAVE_A
       jsr sfs_open
     ;   jsr dump_volid
-    ;   jsr dump_index
+      jsr dump_index
       
       bcc @oerror
       rts
@@ -8911,6 +8963,33 @@ fwrite:
       plx
       pla
       rts
+
+fread:
+    jsr sfs_read_byte
+    bcs dummyout
+    lda sfs_errno
+    beq @close
+    clc
+    rts
+@close:
+    jsr sfs_close
+    bcc dummyout
+
+    lda #<IOout
+    sta VEC_OUT
+    lda #>IOout
+    sta VEC_OUT + 1
+
+    lda #<IOin
+    sta VEC_IN
+    lda #>IOin
+    sta VEC_IN + 1
+    
+    jsr primm
+    .byte 10,13,"Ready",10,13,0
+    sec
+dummyout:
+    rts
 
 dump_volid:
     php

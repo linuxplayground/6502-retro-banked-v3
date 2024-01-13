@@ -594,7 +594,7 @@ sfs_delete:
 ;       A=1, Open for read
 ;       A=2, Open for write
 ;       sfs_fn_ptr, null terminated filename
-; Finds an existing file and sets sfs context on success.
+; Opens and already open file for sequential read or write access
 ;------------------------------------------------------------------------
 sfs_open:
         cmp #2  ; mode must be <= 2

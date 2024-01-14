@@ -363,7 +363,8 @@ TK_BITSET         = TK_SWAP+1       ; BITSET token
 TK_BITCLR         = TK_BITSET+1     ; BITCLR token
 TK_CLS            = TK_BITCLR+1     ; CLS token (retro)
 TK_BYE            = TK_CLS+1        ; BYE token (retro)
-TK_IRQ            = TK_BYE+1        ; IRQ token
+TK_DIR            = TK_BYE+1        ; DIR token (retro)
+TK_IRQ            = TK_DIR+1        ; IRQ token
 TK_NMI            = TK_IRQ+1        ; NMI token
 
 ; secondary command tokens, can't start a statement
@@ -8175,6 +8176,7 @@ LAB_CTBL
       .word LAB_BITCLR-1      ; BITCLR          new command
       .word retro_cls-1       ; CLS             retro
       .word retro_bye-1       ; BYE             retro
+      .word retro_dir-1       ; DIR             retro
       .word LAB_IRQ-1         ; IRQ             new command
       .word LAB_NMI-1         ; NMI             new command
 
@@ -8434,6 +8436,8 @@ LBB_DEF
       .byte "EF",TK_DEF       ; DEF
 LBB_DIM
       .byte "IM",TK_DIM       ; DIM
+LBB_DIR
+      .byte "IR",TK_DIR       ; DIR - RETRO
 LBB_DOKE
       .byte "OKE",TK_DOKE     ; DOKE note - "DOKE" must come before "DO"
 LBB_DO
@@ -8716,6 +8720,8 @@ LAB_KEYT
       .word LBB_CLS           ; CLS (retro)
       .byte 3, 'B'
       .word LBB_BYE           ; BYE (retro)
+      .byte 3, 'D'
+      .word LBB_DIR           ; DIR (retro)
       .byte 3,'I'
       .word LBB_IRQ           ; IRQ
       .byte 3,'N'

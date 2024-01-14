@@ -65,7 +65,7 @@ load:
         lda #>nullout
         sta VEC_OUT + 1
 
-        jmp LAB_1274
+        rts
 
 save:
         lda #2
@@ -173,8 +173,21 @@ close_file:
         sta VEC_IN + 0
         lda #>ACIAin
         sta VEC_IN + 1
-        sec
+        
+        lda #<strReady
+        ldy #>strReady
+        jsr LAB_18C3
+
+        jsr LAB_1477
+        jmp LAB_1319
+        rts
+
+retro_dir:
+        doscall sfs_init
+        doscall sfs_mount
+        doscall dos_bdir
         rts
 
 strAnsiCLSHome: .byte $0D,$0A, $1b, "[2J", $1b, "[H", $0
 strByeMessage:  .byte $0D,$0A,"Exiting ehBasic now...", $0
+strReady:       .byte $0D,$0A,"Ready",$0A,$0D,$0

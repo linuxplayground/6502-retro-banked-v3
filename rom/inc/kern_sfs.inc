@@ -13,5 +13,6 @@ sfs_close                  = $FF39
 sfs_read_byte              = $FF3C
 sfs_write_byte             = $FF3F
 sdcard_init                = $FF42
+dos_bdir                   = $FF45
 
 sfs_errno = $B252

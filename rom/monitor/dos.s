@@ -19,7 +19,7 @@ SD_MOSI         = %10000000
 .import inbuf, inbuf_end, load_arg, path, address, length
 .import to_lower
 
-.export dos_init, strAnsiCLSHome
+.export dos_init, strAnsiCLSHome, dos_bdir
 
 .code
 dos_init:
@@ -113,7 +113,7 @@ cmd_dir:
 	newline
 
 	lda path + 1			; is / the whole path
-	bne @1
+	bne dos_bdir
 	lda #'['
 	jsr acia_putc
 	ldx #0
@@ -125,6 +125,7 @@ cmd_dir:
 	lda #']'
 	jsr acia_putc
 
+dos_bdir:			; entry point when called from basic
 	newline
 @1:
 	jsr sfs_open_first_index_block

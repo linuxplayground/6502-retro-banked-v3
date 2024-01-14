@@ -15,6 +15,7 @@
 .import sfs_read_byte             
 .import sfs_write_byte    
 .import sdcard_init 
+.import dos_bdir
        
 .segment "JMPTBL"
 
@@ -41,3 +42,4 @@ jmp sfs_close
 jmp sfs_read_byte             
 jmp sfs_write_byte            
 jmp sdcard_init
+jmp dos_bdir

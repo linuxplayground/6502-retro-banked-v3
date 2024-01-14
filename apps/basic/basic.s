@@ -8955,22 +8955,22 @@ open_file:
       rts
 
 fwrite:
-      pha
-      phx
-      phy
-      jsr sfs_write_byte
-      ply
-      plx
-      pla
-      rts
+        pha
+        phx
+        phy
+        jsr sfs_write_byte
+        ply
+        plx
+        pla
+        rts
 
 fread:
-    jsr sfs_read_byte
-    bcs dummyout
-    lda sfs_errno
-    beq @close
-    clc
-    rts
+        jsr sfs_read_byte
+        bcs dummyout
+        lda sfs_errno
+        beq @close
+        clc
+        rts
 @close:
     jsr sfs_close
     bcc dummyout

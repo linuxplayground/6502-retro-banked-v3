@@ -13,7 +13,8 @@
 .import sfs_open                  
 .import sfs_close                 
 .import sfs_read_byte             
-.import sfs_write_byte     
+.import sfs_write_byte    
+.import sdcard_init 
        
 .segment "JMPTBL"
 
@@ -39,3 +40,4 @@ jmp sfs_open
 jmp sfs_close                 
 jmp sfs_read_byte             
 jmp sfs_write_byte            
+jmp sdcard_init

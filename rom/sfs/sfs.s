@@ -124,6 +124,7 @@ sfs_mount:
         clc
         rts
 @ok:
+        jsr sfs_dump_volid
         lda #ERRNO_OK
         sec
         rts
@@ -628,6 +629,8 @@ sfs_open:
         sta sector_lba + 2
         lda index + sIndex::start + 3
         sta sector_lba + 3
+        
+        jsr debug_sector_lba
 
         jsr sdcard_read_sector
         bcc @diskreaderror
@@ -675,16 +678,10 @@ sfs_close:
         sta (sfs_ptr)
         bra @fill
 @2:
+        jsr debug_sector_lba
         jsr sdcard_write_sector ; one last write
         bcc @error
                         ; fall through
-; @delay:
-;         ldy #0
-; :       ldx #0
-; :       inx
-;         bne :-
-;         iny
-;         bne :--
 
 @write_index:
         lda sfs_bytes_rem
@@ -701,7 +698,7 @@ sfs_close:
         sta sector_lba + 2
         lda index + sIndex::index_lba + 3
         sta sector_lba + 3
-        ; jsr debug_sector_lba
+        jsr debug_sector_lba
         jsr sdcard_read_sector
         bcc @readerror
         ; copy index into buffer
@@ -712,7 +709,7 @@ sfs_close:
         iny
         cpy #32
         bne @3
-
+        jsr debug_sector_lba
         jsr sdcard_write_sector
         bcc @error
         ; fall through to close 
@@ -824,7 +821,7 @@ sfs_write_byte:
         pha             ; stash received byte
         ; check context
         lda sfs_context
-        cmp #2        ; 02 for write mode
+        cmp #2          ; 02 for write mode
         bne @modeerror
         pla             ; restore received byte
         pha             ; stash it again
@@ -891,6 +888,9 @@ sfs_write_byte:
 ; Print out the current SDCARD LBA Address
 ;------------------------------------------------------------------------
 debug_sector_lba:
+.if 1
+        rts
+.endif
         jsr primm
         .byte 10,13,"SECTOR_LBA: ",0
         lda sector_lba + 3
@@ -901,4 +901,67 @@ debug_sector_lba:
         jsr prbyte
         lda sector_lba + 0
         jsr prbyte
+        rts
+
+;------------------------------------------------------------------------
+; print out details of the volume id
+;------------------------------------------------------------------------
+sfs_dump_volid:
+.if 1
+        rts
+.endif
+        jsr primm
+        .byte 10, 13, "VOLUME ID:   ",0
+        ldx #0
+@1:
+        lda volid + sVolId::id,x
+        jsr acia_putc
+        inx
+        cpx #8
+        bne @1
+
+        jsr primm
+        .byte 10, 13, "VERSION:     ",0
+        ldx #0
+@2:
+        lda volid + sVolId::version, x
+        jsr acia_putc
+        inx
+        cpx #4
+        bne @2
+
+        jsr primm
+        .byte 10, 13, "INDEX START: ",0
+        lda volid + sVolId::index_start + 3
+        jsr prbyte
+        lda volid + sVolId::index_start + 2
+        jsr prbyte
+        lda volid + sVolId::index_start + 1
+        jsr prbyte
+        lda volid + sVolId::index_start + 0
+        jsr prbyte
+
+        jsr primm
+        .byte 10, 13, "INDEX LAST:  ",0
+        lda volid + sVolId::index_last + 3
+        jsr prbyte
+        lda volid + sVolId::index_last + 2
+        jsr prbyte
+        lda volid + sVolId::index_last + 1
+        jsr prbyte
+        lda volid + sVolId::index_last + 0
+        jsr prbyte
+
+        jsr primm
+        .byte 10, 13, "DATA START:  ",0
+        lda volid + sVolId::data_start + 3
+        jsr prbyte
+        lda volid + sVolId::data_start + 2
+        jsr prbyte
+        lda volid + sVolId::data_start + 1
+        jsr prbyte
+        lda volid + sVolId::data_start + 0
+        jsr prbyte
+        jsr primm
+        .byte 10,13,0
         rts

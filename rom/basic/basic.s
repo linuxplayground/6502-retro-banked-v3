@@ -473,7 +473,8 @@ Ibuffs            = VEC_SV+$16
 Ibuffe            = Ibuffs+$47; end of input buffer
 
 Ram_base          = $0800     ; start of user RAM (set as needed, should be page aligned)
-Ram_top           = $9F00     ; end of user RAM+1 (set as needed, should be page aligned)
+Ram_top           = $9E00     ; end of user RAM+1 (set as needed, should be page aligned)
+                              ; need to save a page for extensions here.
 
 Stack_floor       = 16        ; bytes left free on stack for background interrupts
 
@@ -8868,7 +8869,12 @@ LAB_BAER
       .word ERR_CN            ;$1E continue error
       .word ERR_UF            ;$20 undefined function
       .word ERR_LD            ;$22 LOOP without DO
-
+      .word ERR_DS            ;$24 DISK ERROR
+      .word ERR_OP            ;$26 OPEN ERROR
+      .word ERR_CL            ;$28 CLOSE ERROR
+      .word ERR_RD            ;$2A READ ERROR
+      .word ERR_WR            ;$2C WRITE ERROR
+;
 ; I may implement these two errors to force definition of variables and
 ; dimensioning of arrays before use.
 
@@ -8896,6 +8902,11 @@ ERR_ST      .byte "String too complex",$00
 ERR_CN      .byte "Can't continue",$00
 ERR_UF      .byte "Undefined function",$00
 ERR_LD      .byte "LOOP without DO",$00
+ERR_DS      .byte "Disk error",$00
+ERR_OP      .byte "Open file error",$00
+ERR_CL      .byte "Close file error",$00
+ERR_RD      .byte "Disk read error",$00
+ERR_WR      .byte "Disk write error",$00
 
 ;ERR_UV     .byte "Undefined variable",$00
 

@@ -7,10 +7,13 @@
 
 .include "basic.s"
 .include "kern.inc"
+.include "kern_sfs.inc"
+.include "sfs_zp.inc"
+.include "../sfs/structs.inc"
+.include "dos_zp.inc"
 .include "banks.inc"
 .include "io.inc"
 
-.import __BASICSYS_START__, __BASICSYS_SIZE__
 
 ; put the IRQ and MNI code in RAM so that it can be changed
 

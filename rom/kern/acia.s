@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 .include "io.inc"
 
 .export acia_init, acia_getc, acia_getc_nw, acia_putc, acia_puts

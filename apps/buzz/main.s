@@ -1,5 +1,3 @@
-; vim: ft=asm_ca65
-.export beep
 DDRB  = $9F22
 T1CL	= $9F24
 T1CH	= $9F25
@@ -11,8 +9,6 @@ IFR		= $9F2d
 IER		= $9F2e
 
 .code
-
-beep:
   lda #$ff
   sta DDRB
 

@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 rambankreg      = $9F00
 rombankreg      = $9F01
 

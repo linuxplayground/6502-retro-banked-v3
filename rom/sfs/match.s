@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 .include "structs.inc"
 .import sector_buffer, sector_buffer_end, index
 .globalzp sfs_fn_ptr

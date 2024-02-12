@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 .include "banks.inc"
 
 .globalzp krn_ptr1, ram_bank, rom_bank, imparm

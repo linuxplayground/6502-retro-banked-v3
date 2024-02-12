@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 ;-----------------------------------------------------------------------------
 ; SDCARD Routines adapted from: 
 ;      	https://github.com/X16Community/x16-rom/blob/master/fat32/sdcard.s
@@ -20,12 +21,12 @@ PORTA_OUTPUTPINS =  SD_CS | SD_SCK | SD_MOSI
 
 .macro deselect
         lda     #(SD_CS|SD_MOSI)        ; deselect sdcard
-        sta     via_portb
+        sta     via_porta
 .endmacro
 
 .macro select
 	lda 	#(SD_MOSI)
-	sta 	via_portb
+	sta 	via_porta
 .endmacro
 
 	.bss
@@ -121,7 +122,7 @@ spi_rw_byte:
 
 	ldx #$08
 
-	lda via_portb
+	lda via_porta
 	and #$fe
 
 	asl
@@ -131,9 +132,9 @@ spi_rw_byte:
 	tya
 	ror
 
-	sta via_portb
-    	inc via_portb
-	sta via_portb
+	sta via_porta
+    	inc via_porta
+	sta via_porta
 
 	dex
 	bne @l
@@ -232,7 +233,7 @@ sdcmd_start:
 	pha
         phx
         lda #SD_MOSI
-        sta via_portb
+        sta via_porta
         jsr sdcmd_nothingbyte
         jsr sdcmd_nothingbyte
         lda #$ff
@@ -246,9 +247,9 @@ sdcmd_nothingbyte:
         ldx     #8
 @loop:
         lda #(SD_MOSI|SD_CS)
-        sta via_portb
+        sta via_porta
         lda #(SD_SCK|SD_MOSI|SD_CS)
-        sta via_portb
+        sta via_porta
         dex
         bne @loop
         rts
@@ -262,7 +263,7 @@ sdcmd_end:
         jsr sdcmd_nothingbyte
         jsr sdcmd_nothingbyte
         lda #(SD_CS|SD_MOSI)
-        sta via_portb
+        sta via_porta
         plx
         pla
 	plp
@@ -282,13 +283,13 @@ sdcard_init:
 	; sta via_ier
 	; Port b bit 6 and 5 input for sdcard and write protect detection, rest all outputs
 	lda #%10011111
-	sta via_ddrb
+	sta via_ddra
 
         lda     #(SD_CS|SD_MOSI)        ; toggle clock 160 times
         ldx     #160
 @clockloop:
         eor     #SD_SCK
-        sta     via_portb
+        sta     via_porta
         dex
         bne     @clockloop
 

@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 .import acia_init, acia_getc, acia_getc_nw, acia_putc, acia_puts
 .import prbyte, beep, primm
 .import sfs_init                  

@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 
 ; .export krn_ptr1, 
 .exportzp bank_save

@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 ; Converts fat32_size into binary encoded decimal
 
 .import sfs_bytes_rem

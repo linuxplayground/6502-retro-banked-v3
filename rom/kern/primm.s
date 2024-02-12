@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 .import acia_putc
 .globalzp krn_ptr1
 .export primm

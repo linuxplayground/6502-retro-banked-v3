@@ -1,3 +1,5 @@
+; vim: ft=asm_ca65
+;
 ; minimal monitor for EhBASIC and 6502 simulator V1.05
 ; tabs converted to space, tabwidth=6
 

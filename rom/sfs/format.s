@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 .include "sfs.inc"
 .include "kern.inc"
 .include "sdcard.inc"

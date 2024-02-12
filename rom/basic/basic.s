@@ -1,4 +1,4 @@
-
+; vim: ft=asm_ca65
 ; Enhanced BASIC to assemble under 6502 simulator, $ver 2.22p5
 
 ; $E7E1 $E7CF $E7C6 $E7D3 $E7D1 $E7D5 $E7CF $E81E $E825
@@ -362,7 +362,8 @@ TK_SWAP           = TK_GET+1        ; SWAP token
 TK_BITSET         = TK_SWAP+1       ; BITSET token
 TK_BITCLR         = TK_BITSET+1     ; BITCLR token
 TK_CLS            = TK_BITCLR+1     ; CLS token (retro)
-TK_BYE            = TK_CLS+1        ; BYE token (retro)
+TK_BEEP           = TK_CLS+1        ; BeeP token (retro)
+TK_BYE            = TK_BEEP+1        ; BYE token (retro)
 TK_DIR            = TK_BYE+1        ; DIR token (retro)
 TK_IRQ            = TK_DIR+1        ; IRQ token
 TK_NMI            = TK_IRQ+1        ; NMI token
@@ -8175,6 +8176,7 @@ LAB_CTBL
       .word LAB_BITSET-1      ; BITSET          new command
       .word LAB_BITCLR-1      ; BITCLR          new command
       .word retro_cls-1       ; CLS             retro
+      .word retro_beep-1      ; BEEP            retro
       .word retro_bye-1       ; BYE             retro
       .word retro_dir-1       ; DIR             retro
       .word LAB_IRQ-1         ; IRQ             new command
@@ -8399,6 +8401,8 @@ LBB_ATN
       .byte "TN(",TK_ATN      ; ATN(
       .byte $00
 TAB_ASCB
+LBB_BEEP
+      .byte "EEP", TK_BEEP    ; BEEP (retro)
 LBB_BINS
       .byte "IN$(",TK_BINS    ; BIN$(
 LBB_BITCLR
@@ -8407,7 +8411,6 @@ LBB_BITSET
       .byte "ITSET",TK_BITSET ; BITSET
 LBB_BITTST
       .byte "ITTST(",TK_BITTST
-                              ; BITTST(
 LBB_BYE
       .byte "YE", TK_BYE      ; BYE (retro)
       .byte $00
@@ -8720,6 +8723,8 @@ LAB_KEYT
       .word LBB_CLS           ; CLS (retro)
       .byte 3, 'B'
       .word LBB_BYE           ; BYE (retro)
+      .byte 4, 'B'
+      .word LBB_BEEP          ; BEEP (retro)
       .byte 3, 'D'
       .word LBB_DIR           ; DIR (retro)
       .byte 3,'I'

@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 .struct sIndex
         filename       .res 21  ; 21  0
         attrib         .byte    ; 1  21

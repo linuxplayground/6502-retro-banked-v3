@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 .export index, volid, sfs_errno, sfs_bytes_rem
 
 .global inbuf, inbuf_end, path, context, load_arg, FORMAT_BUF, address, length

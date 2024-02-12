@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 .include "macros.inc"
 .include "kern.inc"
 .global strEndl, sfs_errno

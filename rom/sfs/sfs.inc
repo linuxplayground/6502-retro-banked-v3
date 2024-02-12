@@ -1,3 +1,5 @@
+; vim: ft=asm_ca65
+
 ; functions
 .global sfs_init                        ; init the sdcard
 .global sfs_mount                       ; read the volume ID and fill out volid struct

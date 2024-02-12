@@ -1,7 +1,10 @@
+; vim: ft=asm_ca65
 ; contains additional commands for EH Basic
 ; 
 ; BYE - Quits EHBASIC
 ; CLS - CLEAR Screen by issuing Ansi escape sequence "ESC [J2"
+; LOAD "FILENAME.BAS" - Loads a FILENAME
+; SAVE "FILENAME.BAS" - Saves current program into FILENAME.
 
 .macro doscall func
         jsr jsrfar
@@ -29,6 +32,10 @@ retro_bye:
         
         lda     #DOS_BANK
         jmp     rstfar
+
+retro_beep:
+       doscall beep 
+       rts
 
 load:
         lda #1                          ; open in read mode
@@ -151,13 +158,14 @@ fwrite:
 
 fread:
         doscall sfs_read_byte
-        bcs nullout
-        lda sfs_errno
-        beq close_file
-        clc
-        rts
+        bcc :+
 nullout:
         rts
+:       lda sfs_errno
+        beq close_file
+	    ldx #$2A
+	    jmp LAB_XERR
+
 close_file:
         doscall sfs_close
         bcs :+

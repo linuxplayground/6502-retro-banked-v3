@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 .include "io.inc"
 .include "banks.inc"
 .include "macros.inc"

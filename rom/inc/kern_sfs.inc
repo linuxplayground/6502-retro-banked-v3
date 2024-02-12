@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 sfs_init                   = $FF18
 sfs_mount                  = $FF1B
 sfs_open_first_index_block = $FF1E

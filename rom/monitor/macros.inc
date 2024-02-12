@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 .macro newline
 	pha
 	phx

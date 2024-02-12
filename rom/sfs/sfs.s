@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 .include "sdcard.inc"
 .include "kern.inc"
 .include "sfs.inc"
@@ -739,11 +740,10 @@ sfs_read_byte:
         lda sfs_context
         cmp #$01
         bne @modeerror
-        ; read and stach current byte
+        ; read and stash current byte
         lda (sfs_ptr)
         sta sfs_tmp
-
-        ; was increment the sfs_ptr
+        ; we increment the sfs_ptr
         clc
         lda sfs_ptr
         adc #1

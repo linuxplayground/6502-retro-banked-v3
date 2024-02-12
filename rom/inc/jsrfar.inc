@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 ; LONG CALL  utility
 ; ; (C)2019 Michael Steil, License: 2-clause BSD
 

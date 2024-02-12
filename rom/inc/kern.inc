@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 ram_bank        = $13
 rom_bank        = $14
 krn_ptr1        = $15

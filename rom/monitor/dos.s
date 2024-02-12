@@ -1,3 +1,4 @@
+; ft=asm_ca65
 .include "kern.inc"
 .include "macros.inc"
 .include "io.inc"
@@ -284,31 +285,31 @@ cmd_cat:
 	sta sfs_fn_ptr + 1
 	jsr sfs_find
 	bcc @error
-        lda #1
-        jsr sfs_open
-        bcc @error
+    lda #1
+    jsr sfs_open
+    bcc @error
 
-        jsr primm
-        .byte 10, 13, 0
+    jsr primm
+    .byte 10, 13, 0
 
 @1:
-        jsr sfs_read_byte
-        bcc @close
-        jsr acia_putc
-        cmp #$0a
-        bne :+
-        lda #$0d
-        jsr acia_putc
+    jsr sfs_read_byte
+    bcc @close
+    jsr acia_putc
+    cmp #$0a
+    bne :+
+    lda #$0d
+    jsr acia_putc
 :
 	bra @1
 @close:
-        lda sfs_errno
-        cmp #ERRNO_OK
-        beq @done
-        jmp @error
+    lda sfs_errno
+    cmp #ERRNO_OK
+    beq @done
+    jmp @error
 @done:
-        jsr primm
-        .byte 10, 13, "END OF FILE",0
+    jsr primm
+    .byte 10, 13, "END OF FILE",0
 	jsr sfs_close
 	bcc @error
 	rts
@@ -439,7 +440,7 @@ print_dec_buf:
 
 end:
         lda #(SD_CS|SD_MOSI)        	; deselect sdcard
-        sta via_portb
+        sta via_porta
 	rts
 
 ; A = high nibble, X = low nibble

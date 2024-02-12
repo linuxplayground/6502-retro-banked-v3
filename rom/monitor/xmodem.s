@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 
 ; .import xstart, xend
 .import acia_getc_nw, acia_putc

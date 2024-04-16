@@ -55,3 +55,4 @@ __jmpfr:
 	sta rom_bank
 	sta rombankreg
 	jmp ($FFFC)
+

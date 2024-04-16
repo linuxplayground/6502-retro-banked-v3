@@ -34,7 +34,7 @@ retro_bye:
         jmp     rstfar
 
 retro_beep:
-       doscall beep 
+		doscall sn_beep 
        rts
 
 load:

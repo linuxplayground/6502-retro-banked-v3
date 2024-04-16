@@ -23,6 +23,7 @@ KERN_CORE_SOURCES = \
 	kern/kernzp.s \
 	kern/memory.s \
 	kern/beep.s \
+	kern/sn76489.s \
 	kern/primm.s \
 	kern/jmptbl.s
 

@@ -1,6 +1,7 @@
 ; vim: ft=asm_ca65
+; Designed to work with a PIEZO BUZZER attached to PB7 on the VIA
 .export beep
-DDRB  = $9F22
+DDRB    = $9F22
 T1CL	= $9F24
 T1CH	= $9F25
 T2CL	= $9F28

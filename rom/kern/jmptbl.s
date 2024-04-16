@@ -17,7 +17,8 @@
 .import sfs_write_byte    
 .import sdcard_init 
 .import dos_bdir
-       
+.import sn_beep
+
 .segment "JMPTBL"
 
 jmp acia_init
@@ -28,8 +29,8 @@ jmp acia_puts
 jmp prbyte
 jmp beep
 jmp primm
-jmp sfs_init                  
-jmp sfs_mount                 
+jmp sfs_init
+jmp sfs_mount
 jmp sfs_open_first_index_block
 jmp sfs_create                
 jmp sfs_find                  
@@ -44,3 +45,4 @@ jmp sfs_read_byte
 jmp sfs_write_byte            
 jmp sdcard_init
 jmp dos_bdir
+jmp sn_beep

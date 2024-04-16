@@ -11,3 +11,4 @@ acia_puts       = $FF0C
 prbyte          = $FF0F
 beep            = $FF12
 primm           = $FF15
+sn_beep         = $FF48

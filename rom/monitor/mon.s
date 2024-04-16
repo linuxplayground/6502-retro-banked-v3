@@ -6,6 +6,7 @@
 .import jsrfar, init_ram, shared_vars, shared_vars_len
 .import wozmon, xmodem
 .import dos_init, strAnsiCLSHome
+.import sn_start, sn_beep, sn_stop
 
 .globalzp ram_bank, rom_bank, ptr1
 .global strEndl
@@ -16,6 +17,10 @@ main:
         cld
         ldx     #$ff
         txs
+
+		jsr sn_start
+		jsr sn_beep
+		jsr sn_stop
 
         jsr init_ram
         
@@ -29,22 +34,24 @@ main:
         ; for the longest time I struggeled to debug why opening files was failing for me.
         ; turns out these BSS Variables declared in dos.s must be initialised to zero.
         ; CA65 does not initialise BSS data to 0 by default.
-	ldx #<shared_vars_len
-:	stz shared_vars+$ff,x
-	dex
-	bne :-
+		ldx #<shared_vars_len
+:		stz shared_vars+$ff,x
+		dex
+		bne :-
 
-	ldx #0
-:	stz shared_vars,x
-	inx
-	bne :-
+		ldx #0
+:		stz shared_vars,x
+		inx
+		bne :-
 
         cli
 
         ; start
+		;
         print strAnsiCLSHome
         print strWelcome
         print strHelp
+		;
 
 loop:
         lda #<prompt

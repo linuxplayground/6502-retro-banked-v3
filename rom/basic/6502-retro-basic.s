@@ -34,7 +34,7 @@ retro_bye:
         jmp     rstfar
 
 retro_beep:
-		doscall sn_beep 
+        doscall sn_beep 
        rts
 
 load:
@@ -163,8 +163,8 @@ nullout:
         rts
 :       lda sfs_errno
         beq close_file
-	    ldx #$2A
-	    jmp LAB_XERR
+        ldx #$2A
+        jmp LAB_XERR
 
 close_file:
         doscall sfs_close

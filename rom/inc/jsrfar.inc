@@ -13,7 +13,7 @@
 	phx
 	phy
 
-        tsx
+    tsx
 	lda $106,x      ;return address lo
 	sta imparm
 	clc

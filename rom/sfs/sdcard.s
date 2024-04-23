@@ -16,24 +16,24 @@
 SD_CS           = %00000010
 SD_SCK          = %00000001
 SD_MOSI         = %10000000
-
-PORTA_OUTPUTPINS =  SD_CS | SD_SCK | SD_MOSI
+SN_WE           = %00000100
 
 .macro deselect
-        lda     #(SD_CS|SD_MOSI)        ; deselect sdcard
+        lda     #(SD_CS|SD_MOSI|SN_WE)        ; deselect sdcard
         sta     via_porta
 .endmacro
 
 .macro select
-	lda 	#(SD_MOSI)
+	lda 	#(SD_MOSI|SN_WE)
 	sta 	via_porta
 .endmacro
 
-	.bss
 cmd_idx = sdcard_param
 cmd_arg = sdcard_param + 1
 cmd_crc = sdcard_param + 5
 
+
+	.bss
 sector_buffer:
 	.res 512
 sector_buffer_end:
@@ -133,7 +133,7 @@ spi_rw_byte:
 	ror
 
 	sta via_porta
-    	inc via_porta
+   	inc via_porta
 	sta via_porta
 
 	dex
@@ -232,7 +232,7 @@ sdcmd_start:
         php
 	pha
         phx
-        lda #SD_MOSI
+        lda #(SD_MOSI|SN_WE)
         sta via_porta
         jsr sdcmd_nothingbyte
         jsr sdcmd_nothingbyte
@@ -246,9 +246,9 @@ sdcmd_start:
 sdcmd_nothingbyte:
         ldx     #8
 @loop:
-        lda #(SD_MOSI|SD_CS)
+        lda #(SD_MOSI|SD_CS|SN_WE)
         sta via_porta
-        lda #(SD_SCK|SD_MOSI|SD_CS)
+        lda #(SD_SCK|SD_MOSI|SD_CS|SN_WE)
         sta via_porta
         dex
         bne @loop
@@ -262,7 +262,7 @@ sdcmd_end:
         jsr spi_write
         jsr sdcmd_nothingbyte
         jsr sdcmd_nothingbyte
-        lda #(SD_CS|SD_MOSI)
+        lda #(SD_CS|SD_MOSI|SN_WE)
         sta via_porta
         plx
         pla
@@ -281,11 +281,11 @@ sdcard_init:
 	; disable VIA interrupts
 	lda #%01111111			 ; bit 7 "0", to clear all int sources
 	; sta via_ier
-	; Port b bit 6 and 5 input for sdcard and write protect detection, rest all outputs
-	lda #%10011111
+	; Port a bits 7, 2, 1, 0 are output, rest are high impedence
+	lda #%10000111
 	sta via_ddra
 
-        lda     #(SD_CS|SD_MOSI)        ; toggle clock 160 times
+        lda     #(SD_CS|SD_MOSI|SN_WE)        ; toggle clock 160 times
         ldx     #160
 @clockloop:
         eor     #SD_SCK

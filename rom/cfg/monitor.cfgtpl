@@ -10,6 +10,7 @@ SEGMENTS {
         KERNZP:  load = KERNZP, define = yes, type=zp;
         MONZP:   load = MONZP, define = yes, type=zp;
         DOSZP:   load = DOSZP, define = yes, type=zp;
+		VDPZP:   load = VDPZP, define = yes, type=zp;
         CODE:    load = ROM, type = ro, define = yes;
         RODATA:  load = ROM, type = ro, define = yes;
         KERNRAM: load = ROM, run = KERNRAM,type = ro, define = yes; 

@@ -1,6 +1,6 @@
 ; vim: ft=asm_ca65
 .import acia_init, acia_getc, acia_getc_nw, acia_putc, acia_puts
-.import prbyte, beep, primm
+.import prbyte, primm
 .import sfs_init                  
 .import sfs_mount                 
 .import sfs_open_first_index_block
@@ -18,7 +18,8 @@
 .import sdcard_init 
 .import dos_bdir
 .import sn_beep
-
+.import vdp_init, vdp_write_register, vdp_set_write_address, vdp_set_read_address
+.import vdp_clear_vram, vdp_load_font, vdp_enable_text_80_mode
 .segment "JMPTBL"
 
 jmp acia_init
@@ -27,7 +28,7 @@ jmp acia_getc_nw
 jmp acia_putc
 jmp acia_puts
 jmp prbyte
-jmp beep
+jmp sn_beep
 jmp primm
 jmp sfs_init
 jmp sfs_mount
@@ -45,4 +46,10 @@ jmp sfs_read_byte
 jmp sfs_write_byte            
 jmp sdcard_init
 jmp dos_bdir
-jmp sn_beep
+jmp vdp_init
+jmp vdp_write_register
+jmp vdp_set_write_address
+jmp vdp_set_read_address
+jmp vdp_clear_vram
+jmp vdp_load_font
+jmp vdp_enable_text_80_mode

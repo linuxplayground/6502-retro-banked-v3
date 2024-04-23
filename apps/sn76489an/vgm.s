@@ -60,7 +60,6 @@ song_loop:
 :	lda song_times,y ; sustain
 	tax
 	jsr time
-	;jsr silence_all
 	phy
 	lda song+1,y
 	beq @last_decay
@@ -77,6 +76,7 @@ song_loop:
 	jsr decay
 	ply
 end:
+	jsr silence_all
 	rts
 
 time:

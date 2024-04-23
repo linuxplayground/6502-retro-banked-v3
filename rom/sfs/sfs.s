@@ -60,6 +60,9 @@ sfs_writesector:
 ; initialise the library.
 ;------------------------------------------------------------------------
 sfs_init:
+        lda #5
+        pha
+@loop_init:
         lda #<sector_buffer
         sta sfs_ptr
         lda #>sector_buffer
@@ -77,7 +80,13 @@ sfs_init:
         cmp #$C0
         bne :-
 
-        jmp sdcard_init
+        jsr sdcard_init
+        pla
+        dec
+        pha
+        bne @loop_init
+        pla
+        rts
 
 ;------------------------------------------------------------------------
 ; read volume id block from sdcard, store data into the struct and validate

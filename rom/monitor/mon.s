@@ -31,7 +31,7 @@ main:
         sta ram_bank
         sta rambankreg
 
-        ; for the longest time I struggeled to debug why opening files was failing for me.
+        ; for the longest time I struggled to debug why opening files was failing for me.
         ; turns out these BSS Variables declared in dos.s must be initialised to zero.
         ; CA65 does not initialise BSS data to 0 by default.
 		ldx #<shared_vars_len

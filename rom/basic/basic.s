@@ -362,9 +362,9 @@ TK_SWAP           = TK_GET+1        ; SWAP token
 TK_BITSET         = TK_SWAP+1       ; BITSET token
 TK_BITCLR         = TK_BITSET+1     ; BITCLR token
 TK_CLS            = TK_BITCLR+1     ; CLS token (retro)
-TK_BEEP           = TK_CLS+1        ; BeeP token (retro)
-TK_BYE            = TK_BEEP+1        ; BYE token (retro)
-TK_DIR            = TK_BYE+1        ; DIR token (retro)
+TK_BYE            = TK_CLS+1        ; BYE token (retro)
+TK_BEEP           = TK_BYE+1        ; Beep token (retro)
+TK_DIR            = TK_BEEP+1       ; DIR token (retro)
 TK_IRQ            = TK_DIR+1        ; IRQ token
 TK_NMI            = TK_IRQ+1        ; NMI token
 
@@ -8176,8 +8176,8 @@ LAB_CTBL
       .word LAB_BITSET-1      ; BITSET          new command
       .word LAB_BITCLR-1      ; BITCLR          new command
       .word retro_cls-1       ; CLS             retro
-      .word retro_beep-1      ; BEEP            retro
       .word retro_bye-1       ; BYE             retro
+      .word retro_beep-1      ; BEEP            retro
       .word retro_dir-1       ; DIR             retro
       .word LAB_IRQ-1         ; IRQ             new command
       .word LAB_NMI-1         ; NMI             new command

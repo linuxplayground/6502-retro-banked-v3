@@ -60,7 +60,7 @@ sfs_writesector:
 ; initialise the library.
 ;------------------------------------------------------------------------
 sfs_init:
-        lda #5
+        lda #3
         pha
 @loop_init:
         lda #<sector_buffer

@@ -72,6 +72,7 @@ load:
         lda #>nullout
         sta VEC_OUT + 1
 
+        jsr LAB_1319
         rts
 
 save:
@@ -157,11 +158,20 @@ fwrite:
         rts
 
 fread:
+        phx
+        phy
         doscall sfs_read_byte
-        bcc :+
+        ply
+        plx
+        bcc fread_error
+        cmp #$0a
+        bne nullout
+        lda #$0d
 nullout:
+        sec
         rts
-:       lda sfs_errno
+fread_error:
+        lda sfs_errno
         beq close_file
         ldx #$2A
         jmp LAB_XERR
@@ -188,7 +198,6 @@ close_file:
 
         jsr LAB_1477
         jmp LAB_1319
-        rts
 
 retro_dir:
         doscall sfs_init

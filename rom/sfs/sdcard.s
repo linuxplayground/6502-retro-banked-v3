@@ -13,10 +13,10 @@
 
 .export sector_buffer, sector_buffer_end, sector_lba
 
-SD_CS           = %00000010
 SD_SCK          = %00000001
-SD_MOSI         = %10000000
+SD_CS           = %00000010
 SN_WE           = %00000100
+SD_MOSI         = %10000000
 
 .macro deselect
         lda     #(SD_CS|SD_MOSI|SN_WE)        ; deselect sdcard

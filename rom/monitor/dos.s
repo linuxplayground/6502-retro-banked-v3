@@ -19,7 +19,6 @@ SD_MOSI         = %10000000
 .import BinToBcd, FORMAT_BUF
 .import inbuf, inbuf_end, load_arg, path, address, length
 .import to_lower
-
 .export dos_init, strAnsiCLSHome, dos_bdir
 
 .code

@@ -1,3 +1,5 @@
+; vim: ft=asm_ca65
+
 .byte $00,$00,$00,$00,$00,$00,$00,$00 ; /*  - $00 - ALWAYS BLANK    */
 .byte $18,$3C,$3C,$7E,$7E,$7E,$3C,$3C ; /*  - $01 - snake head up   */
 .byte $3C,$3C,$7E,$7E,$7E,$3C,$3C,$18 ; /*  - $02 - snake head down */

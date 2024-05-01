@@ -4,7 +4,7 @@
 	phx
 	lda #<strEndl
 	ldx #>strEndl
-	jsr acia_puts
+    jsr acia_puts
 	plx
 	pla
 .endmacro
@@ -14,7 +14,7 @@
 	phx
 	lda #<addr
 	ldx #>addr
-	jsr acia_puts
+    jsr acia_puts
 	plx
 	pla
 .endmacro

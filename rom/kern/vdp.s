@@ -1,149 +1,302 @@
-.globalzp vdp_ptr1
+; vim: ft=asm_ca65
+.include "vdp.inc"
+.include "kern.inc"
 
-.export vdp_init, vdp_write_register, vdp_set_write_address, vdp_set_read_address
-.export vdp_clear_vram, vdp_load_font, vdp_enable_text_80_mode
+.export _vdp_80_col, _vdp_unlock, _vdp_lock, _vdp_print, _vdp_clear_screen
+.export _vdp_init_textmode, _vdp_write_reg, _vdp_write_address, _vdp_load_font
+.export _vdp_newline, _vdp_write_char, _vdp_console_out
 
-
-; memory mapped address of the F18A
-F18A 						= $9F30
-F18A_RAM					= F18A + 0
-F18A_REG					= F18A + 1
-
-; constants for vram tables
-VDP_SPRITE_PATTERN_TABLE 	= $0
-VDP_PATTERN_TABLE        	= $800
-VDP_SPRITE_ATTRIBUTE_TABLE 	= $1000
-VDP_NAME_TABLE 				= $1400
-VDP_COLOR_TABLE				= $2000
-
-; mdoe enum
-.enum enum_vdp_mode
-	text		; 0
-	text_80		; 1
-	g1			; 2
-	g2			; 3
-.endenum
-
-.bss
-vdp_mode:	.byte 0
+.global vdp
+.globalzp vdpptr1,vdpptr2,vdpptr3
 
 .segment "VDPZP" : zeropage
-vdp_ptr1: 	.res 2
-vdp_ptr2:	.res 2
+
+vdpptr1:    .res 2
+vdpptr2:    .res 2
+vdpptr3:    .res 2
+
+.segment "VDPRAM"
+vdp:        .tag sVdp
 
 .code
+; a utility function to print out a 16bit value in hex.
+_debug16:
+    pha
+    txa
+    jsr prbyte
+    pla
+    jsr prbyte
+    rts
 
-; initialize the VDP into TEXT mode 40 column
-vdp_init:
-	lda #<vdp_text_mode_registers
-	sta vdp_ptr1
-	lda #>vdp_text_mode_registers
-	sta vdp_ptr1 + 1
+;==============================================
+; sets up 80 column text mode
+;==============================================
+_vdp_80_col:
+    lda #$04
+    ldx #$00
+    jsr _vdp_write_reg
+    lda #80
+    sta vdp + sVdp::cols
+    rts
 
-	ldx #0
-@vdp_init_loop:
-	lda (vdp_ptr1),y
-	jsr vdp_write_register
-	inx
-	cpx #$8
-	bne @vdp_init_loop
-	lda enum_vdp_mode::text
-	sta vdp_mode
-	rts
+;==============================================
+; unlocks the F18A
+;==============================================
+_vdp_unlock:
+    lda #$1c
+    ldx #57
+    jsr _vdp_write_reg
+    lda #$1c
+    ldx #57
+    jsr _vdp_write_reg
+    rts
 
-; set a value in A to register in X
-vdp_write_register:
-	sta F18A_REG
-	txa
-	ora #$80
-	sta F18A_REG
-	rts
+;==============================================
+; locks the F18A if already unlocked.
+;==============================================
+_vdp_lock:
+    lda #$00
+    ldx #57
+    jsr _vdp_write_reg
+    rts
 
-; set up the VDP RAM write address
-; A is low byte, X is high byte
-vdp_set_write_address:
-	sta F18A_REG
-	txa
-	ora #$40
-	sta F18A_REG
-	rts
+;==============================================
+; inerprets input keys and acts accordingly
+; A contains char from terminal
+;==============================================
+_vdp_console_out:
+    cmp #$0a
+    beq @newline
+    cmp #$0d
+    beq @newline
+    cmp #$08
+    beq @backspace
+    cmp #$09
+    beq @tab
+    jsr _vdp_write_char
+    rts
+@newline:
+    jmp _vdp_newline
+@backspace:
+    jmp _vdp_backspace
+@tab:
+    lda vdp + sVdp::vx
+    and #%11111100
+    clc
+    adc #3
+    sta vdp + sVdp::vx
+:   jmp _vdp_xy_to_nametable
 
-; set up the VDP RAM Read address
-; A is low byte, X is high byte
-vdp_set_read_address:
-	sta F18A_REG
-	txa
-	sta F18A_REG
-	rts
+;==============================================
+; Print a string to the screen
+; AX points to string
+;==============================================
+_vdp_print:
+    sta vdpptr1
+    stx vdpptr1 + 1
+    ldy #0
+:
+    lda (vdpptr1),y
+    beq @done
+    jsr _vdp_write_char
+    iny
+    bra :-
+@done:
+    rts
 
-; clears all vdp ram (16k of it)
-vdp_clear_vram:
-	lda #$00
-	ldx #$00
-	jsr vdp_set_write_address
-	lda #$ff
-	sta vdp_ptr2
-	lda #$3f
-	sta vdp_ptr2 + 1
-:	lda #$00
-	sta F18A_RAM
-	dec vdp_ptr1
-	lda vdp_ptr1
-	bne :-
-	dec vdp_ptr1 + 1
-	lda vdp_ptr1 + 1
-	bne :-
-	rts
+_vdp_write_char:
+    pha
+    inc vdp + sVdp::vx
+    lda vdp + sVdp::cols
+    cmp vdp + sVdp::vx
+    bcs :+
+    stz vdp + sVdp::vx
+    inc vdp + sVdp::vy
+    lda vdp + sVdp::rows
+    cmp vdp + sVdp::vy
+    bcs :+
+    jsr _vdp_clear_screen
+:   pla
+    sta F18A_RAM
+    rts
 
-; font_start in A/X, font_end in vdp_ptr1
-vdp_load_font:
-	sta vdp_ptr2
-	stx vdp_ptr2 + 1
+;==============================================
+; move back, delete char, move back again.
+;==============================================
+_vdp_backspace:
+    lda vdp + sVdp::vx
+    beq @nobackspace
+    dec vdp + sVdp::vx
+    jsr _vdp_xy_to_nametable
+    lda #' '
+    jsr _vdp_write_char
+    dec vdp + sVdp::vx
+    jmp _vdp_xy_to_nametable
+@nobackspace:
+    rts
 
-	lda #<VDP_PATTERN_TABLE
-	ldx #>VDP_PATTERN_TABLE
-	jsr vdp_set_write_address
+;==============================================
+; move the current cursor position to the start
+; of the next line.
+;==============================================
+_vdp_newline:
+    stz vdp + sVdp::vx
+    inc vdp + sVdp::vy
+    lda vdp + sVdp::vy
+    cmp vdp + sVdp::rows
+    bcc _vdp_xy_to_nametable
+    jmp _vdp_clear_screen
 
-	ldy #0
-:	lda (vdp_ptr2)
-	sta F18A_RAM
-	lda vdp_ptr2
-	clc
-	adc #1
-	sta vdp_ptr2
-	lda #0
-	adc vdp_ptr2 + 1
-	sta vdp_ptr2 + 1
-	cmp #>vdp_ptr1 + 1
-	bne :-
-	lda vdp_ptr1
-	cmp #<vdp_ptr1
-	bne :-
-	rts
+    ;fall through
+_vdp_xy_to_nametable:
+    copyptr vdp + sVdp::nametable, vdpptr1
+    ;debug16 vdpptr1
+    lda vdp + sVdp::vy
+    beq @addx
+    tay
+@loop:
+    lda vdp + sVdp::cols
+    cmp #80
+    bne :+
+    add16 vdpptr1,80
+    bra @decy
+:   cmp #40
+    bne :+
+    add16 vdpptr1,40
+    bra @decy
+:   add16 vdpptr1,32
+@decy:
+    dey
+    bne @loop
+@addx:
+    lda vdp + sVdp::vx
+    clc
+    adc vdpptr1
+    sta vdpptr1
+    lda vdpptr1 +1
+    adc #0
+    sta vdpptr1 + 1
+@set_write_address:
+    ;debug16 vdpptr1
+    lda vdpptr1
+    ldx vdpptr1 + 1
+    jmp _vdp_write_address
+
+;==============================================
+; Write to vdp register
+; A = value to write, x = register to write to
+;==============================================
+_vdp_write_reg:
+    sta F18A_REG
+    txa
+    ora #$80
+    sta F18A_REG
+    rts
+
+;==============================================
+; Set up the vdp for writing at vram address
+; A = low byte of vram address, x = high byte
+;==============================================
+_vdp_write_address:
+    sta F18A_REG
+    txa
+    ora #$40
+    sta F18A_REG
+    rts
+
+;==============================================
+; Fills nametable with spaces
+;==============================================
+_vdp_clear_screen:
+    vdp_set_write_address vdp + sVdp::nametable
+    ldy #8
+    lda vdp + sVdp::cols
+    cmp #80
+    beq :+
+    ldy #4
+:
+    lda #' '
+:
+    ldx #0
+:
+    sta F18A_RAM
+    dex 
+    bne :-
+    dey 
+    bne :--
+    stz vdp + sVdp::vx
+    stz vdp + sVdp::vy
+    vdp_set_write_address vdp + sVdp::nametable
+    rts
+
+;==============================================
+; Init vdp into standard 40x24 text mode
+;==============================================
+_vdp_init_textmode:
+    set16 vdpptr1, textmode_registers
+    jsr vdp_loadregisters
+    ; set up vdp struct data
+    lda #$00
+    sta vdp + sVdp::nametable
+    lda #$08
+    sta vdp + sVdp::nametable + 1
+    stz vdp + sVdp::patterntable
+    stz vdp + sVdp::patterntable + 1
+    lda #40
+    sta vdp + sVdp::cols
+    lda #24
+    sta vdp + sVdp::rows
+    rts
+
+;==============================================
+; loads the registers from a 0xff terminated data table pointed to
+; by vdpptr1
+;==============================================
+vdp_loadregisters:
+    ldy #0
+:   lda (vdpptr1),y
+    cmp #$ff
+    beq :+
+    sta F18A_REG
+    iny
+    lda (vdpptr1),y
+    ora #$80
+    sta F18A_REG
+    iny
+    bra :-
+:   rts
 
 
-; Turns on 80 x 24 text mode - F18A only
-vdp_enable_text_80_mode:
-	lda #$04
-	ldx #$00
-	jsr vdp_write_register
-	lda #$f0
-	ldx #$01
-	jsr vdp_write_register
-	rts
-
-
+;==============================================
+; set up font data
+; font data is pointed to by vdpptr1
+; size of font stored in vdpptr2
+;==============================================
+_vdp_load_font:
+    vdp_set_write_address vdp + sVdp::patterntable
+@loop:
+    lda (vdpptr1)
+    sta F18A_RAM
+    ; decrement vdpptr2; break if 0
+    lda vdpptr2
+    bne :+
+    dec vdpptr2 + 1
+:   dec vdpptr2
+    lda vdpptr2
+    ora vdpptr2 + 1
+    beq @done
+    inc16 vdpptr1
+    bra @loop
+@done:
+    rts
 
 .rodata
-; F18 Setup registers
-vdp_text_mode_registers:
-	.byte $00	;r0
-	.byte $F0	;r1 16kb ram + M1, interrupts enabled | text mode
-	.byte $05	;r2 name table at 0x1400 
-	.byte $80	;r3 color table at 0x2000
-	.byte $01	;r4 pattern generator table at 0x800
-	.byte $20   ;r5 sprite attributes table at 0x1000
-	.byte $00   ;r6 sprite pattern table at 0x0000
-	.byte $e1	;r7 forground color = grey, background color = black
-
+str_tab: .byte "    ",0
+textmode_registers:
+    .byte $00, $00  ; textmode, no external video
+    .byte $d0, $01  ; 16K, enable display, disable interrupt
+    .byte $02, $02  ; name table at 0x0800
+    .byte $00, $04  ; pattern table at 0x0000
+    .byte $f4, $07  ; white text on dark blue background
+    .byte $ff       ; end of data table
 

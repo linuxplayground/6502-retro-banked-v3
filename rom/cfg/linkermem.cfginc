@@ -2,7 +2,7 @@
         KERNZP:   start = $0013, size = $0008;
         MONZP:    start = $001B, size = $0012;  /* Used by Wozmon and XMODEM. Can reallocate */
         BASICZP:  start = $001B, size = $0093;  /* If you need basic to work with other roms, leave this alone */
-		VDPZP:	  start = $00B0, size = $0010;  /* 16 bytes of ZP for VDP */
+        VDPZP:    start = $00B0, size = $0010;  /* 16 bytes of ZP for VDP */
         DOSZP:    start = $00D0, size = $0010;
         /* E0 - FF is free */
 

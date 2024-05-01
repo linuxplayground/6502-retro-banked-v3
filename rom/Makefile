@@ -25,6 +25,7 @@ KERN_CORE_SOURCES = \
 	kern/sn76489.s \
 	kern/primm.s \
 	kern/vdp.s \
+	kern/tty.s \
 	kern/jmptbl.s
 
 DRIVER_SOURCES = \

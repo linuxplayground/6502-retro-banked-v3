@@ -5,7 +5,6 @@
 .importzp ptr1
 
 .export convert_error
-
 .code
 
 convert_error:

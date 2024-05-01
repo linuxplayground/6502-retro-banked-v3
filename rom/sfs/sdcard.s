@@ -54,7 +54,7 @@ spi_sr:		    .byte 0
 ; clobbers: A,X,Y
 ;-----------------------------------------------------------------------------
 wait_ready:
-	lda #8
+	lda #$F0
 	sta timeout_cnt
 
 @1:	ldx #0		; 2

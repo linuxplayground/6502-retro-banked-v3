@@ -136,8 +136,6 @@ strHelp:
     .byte "r => Run from 0x800", $0a,$0d
     .byte "x => Xmodem receive", $0a,$0d,$0a,$0d,$0
 
-font80:
-    .include "font_80.s"
 
 .segment "VECTORS"
         .word $0000

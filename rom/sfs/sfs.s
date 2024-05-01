@@ -60,9 +60,6 @@ sfs_writesector:
 ; initialise the library.
 ;------------------------------------------------------------------------
 sfs_init:
-        lda #3
-        pha
-@loop_init:
         lda #<sector_buffer
         sta sfs_ptr
         lda #>sector_buffer
@@ -80,6 +77,10 @@ sfs_init:
         cmp #$C0
         bne :-
 
+        ; Run the SDCARD initialization 3 whole times.
+        lda #3
+        pha
+@loop_init:
         jsr sdcard_init
         pla
         dec

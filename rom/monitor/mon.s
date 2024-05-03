@@ -10,9 +10,9 @@
 .import dos_init, strAnsiCLSHome
 .import sn_start, sn_beep, sn_stop
 
-.globalzp ram_bank, rom_bank, ptr1, vdpptr1, vdpptr2, vdpptr3
+.globalzp ram_bank, rom_bank, ptr1
 
-.global strEndl,vdp
+.global strEndl
 
 .code
 main:

@@ -227,7 +227,7 @@ sfs_read_next_index:
         bne sfs_read_index
         ; else
         jsr sfs_open_next_index_block
-        bcs  sfs_read_index
+        bcs  sfs_read_next_index
         ; must have hit end of index
         clc
         rts

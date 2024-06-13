@@ -70,6 +70,8 @@ loop:
         beq run_dos
         cmp #'h'
         beq run_help
+        cmp #'p'
+        beq run_hopper
         cmp #'m'
         beq run_woz
         cmp #'r'
@@ -87,6 +89,9 @@ run_woz:
         jsr wozmon
         jmp loop
 
+run_hopper:
+        lda #2
+        jmp rstfar
 run_basic:
         lda #BASIC_BANK
         jmp rstfar
@@ -132,6 +137,7 @@ strHelp:
     .byte "h => help", $0a,$0d
     .byte "b => ehBasic", $0a,$0d
     .byte "d => DOS", $0a, $0d
+    .byte "p => Hopper", $0a, $0d
     .byte "m => Wozmon", $0a,$0d
     .byte "r => Run from 0x800", $0a,$0d
     .byte "x => Xmodem receive", $0a,$0d,$0a,$0d,$0

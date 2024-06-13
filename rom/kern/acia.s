@@ -21,7 +21,8 @@ acia_init:
         sta acia_status
         lda #(ACIA_PARITY_DISABLE | ACIA_ECHO_DISABLE | ACIA_TX_INT_DISABLE_RTS_LOW | ACIA_RX_INT_DISABLE | ACIA_DTR_LOW)
         sta acia_command
-        lda #$10
+        lda #$10                   ; 16 x external clock which if running a 1.8432 MZ can, you get 115200 baud.
+        ; lda #$1F                 ; This gives 19200 baud rate generator.
         sta acia_control
         rts
 

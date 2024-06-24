@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 .include "../../rom/inc/kern.inc"
 
 PORTB   = $9F20

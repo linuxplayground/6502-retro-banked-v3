@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 PORTB   = $9F20
 PORTA   = $9F21
 DDRB    = $9F22
@@ -8,11 +9,11 @@ T1LL    = $9F26
 T1LH    = $9F27
 T2CL    = $9F28
 T2CH    = $9F29
-SR	   	= $9F2a
-ACR		= $9F2b
-PCR		= $9F2c
-IFR		= $9F2d
-IER		= $9F2e
+SR	= $9F2a
+ACR	= $9F2b
+PCR	= $9F2c
+IFR	= $9F2d
+IER	= $9F2e
 
 SN_WE   = %00000100
 SN_READY= %00001000
@@ -28,13 +29,13 @@ VOL     = %00010000
 VOL_OFF = %00001111
 VOL_MAX = %00000000
 
-C1_SUSTAIN 	= $F0
-C1_DECAY 	= $F1
+C1_SUSTAIN  = $F0
+C1_DECAY    = $F1
 
 FULL        = 64
 HALF        = 32
 QUARTER     = 16
-EIGHTH		= 8
+EIGHTH	    = 8
 SIXTEENTH   = 4
 THIRTYTOOTH = 2
 
@@ -107,9 +108,9 @@ decay:
 	ldx #$04			; match starting volume
 	sty $F0
 
-	lda #$69			; decay interval
+	lda #$D2			; decay interval
 	sta T1CL
-	lda #$18
+	lda #$30
 	sta T1CH
 
 @loop:
@@ -185,8 +186,8 @@ song:
 	.byte $00
 
 song_times:
-	.byte   4,   4,   4,   4,  16,  16,  32, 32 
-	.byte   4,   4,   4,   4,  16,  16,  48, 32
-	.byte   4,   4,   4,   4,  16,   4,  16, 16,    8,   4,  16,  32
+	.byte   8,   8,   8,   8,  32,  32,  64, 64 
+	.byte   8,   8,   8,   8,  32,  32,  96, 64
+	.byte   8,   8,   8,   8,  32,   8,  32, 32,   16,   8,  32,  64
 
 .include "notes.asm"

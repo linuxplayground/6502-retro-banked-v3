@@ -1,4 +1,4 @@
-clock_frequency = 2000000
+clock_frequency = 4000000
 notes = [
 {"note": "C1", "freq": 55.00},
 {"note": "C#1", "freq": 58.27},

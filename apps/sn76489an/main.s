@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 PORTB   = $9F20
 PORTA   = $9F21
 DDRB    = $9F22

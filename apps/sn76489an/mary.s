@@ -1,3 +1,4 @@
+; vim: ft=asm_ca65
 ; synth.s - Playing with the SN76489AN chip
 
 ; SN76489AN - https://www.smspower.org/Development/SN76489

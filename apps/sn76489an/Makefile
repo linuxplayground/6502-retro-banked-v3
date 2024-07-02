@@ -17,5 +17,11 @@ vgm:
 	ld65 -C sn76489an.cfg -o $(BUILD_DIR)/vgm.raw -m $(BUILD_DIR)/vgm.map $(BUILD_DIR)/vgm.o
 	$(LOADTRIM) $(BUILD_DIR)/vgm.raw $(BUILD_DIR)/vgm.bin
 
+piano:
+	mkdir -pv $(BUILD_DIR)
+	ca65 --cpu 65c02 -I $(ROM)/inc -l $(BUILD_DIR)/piano.lst -o $(BUILD_DIR)/piano.o piano.s
+	ld65 -C sn76489an.cfg -o $(BUILD_DIR)/piano.raw -m $(BUILD_DIR)/piano.map $(BUILD_DIR)/piano.o
+	$(LOADTRIM) $(BUILD_DIR)/piano.raw $(BUILD_DIR)/piano.bin
+
 clean:
 	rm -fr $(BUILD_DIR)/*

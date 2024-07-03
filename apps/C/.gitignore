@@ -3,3 +3,4 @@
 *.raw
 *.lst
 *.map
+*.sym

@@ -104,6 +104,11 @@ _vdp_print:
 @done:
     rts
 
+;==============================================
+; Print a character to the screen at the cursor
+; location.  Increment cursor location.
+; A contains char to print.
+;==============================================
 _vdp_write_char:
     pha
     inc vdp + sVdp::vx
@@ -148,6 +153,7 @@ _vdp_newline:
     jmp _vdp_clear_screen
 
     ;fall through
+
 _vdp_xy_to_nametable:
     copyptr vdp + sVdp::nametable, vdpptr1
     ;debug16 vdpptr1

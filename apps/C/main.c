@@ -1,4 +1,4 @@
-#include "main.h"
+#include "6502-retro.h"
 
 unsigned char c;
 

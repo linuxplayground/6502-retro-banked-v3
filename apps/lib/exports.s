@@ -16,13 +16,14 @@
 .export _vdp_load_font   := $FF60
 .export _vdp_clear_screen := $FF54
 .export _vdp_print       := $FF51
+.export _vdp_write_reg   := $FF5A
 .export _vdp_write_char  := $FF66
 .export _vdp_write_address := $FF5D
 .export _vdp_newline     := $FF63
 .export _vdp_console_out := $FF69
 
-.export _vdp             := $B500
-.export _vdpptr1 :absolute :=  $00B0
+.export _vdp               := $B500
+.export _vdpptr1 :absolute := $00B0
 .export _vdpptr2 :absolute := $00B2
 .export _vdpptr3 :absolute := $00B4
 

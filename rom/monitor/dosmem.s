@@ -28,3 +28,4 @@ length:         .word 0
 FORMAT_BUF:     .res 16
 
 shared_vars_len = * - shared_vars
+

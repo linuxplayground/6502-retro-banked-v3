@@ -85,7 +85,7 @@ _vdp_console_out:
     clc
     adc #3
     sta vdp + sVdp::vx
-:   jmp _vdp_xy_to_nametable
+    jmp _vdp_xy_to_nametable
 
 ;==============================================
 ; Print a string to the screen

@@ -1,4 +1,6 @@
-#include <peekpoke.h>
+//
+// ACIA
+//
 
 /* Print a string to serial pointed to by s
  */
@@ -13,6 +15,7 @@ extern unsigned char acia_getc();
 extern unsigned char acia_getc_nw();
 
 /* Print a single character `c` to the serial port.
+ *
  */
 extern void __fastcall__ acia_putc(const unsigned char c);
 
@@ -29,6 +32,7 @@ extern void __fastcall__ prbyte(const unsigned char c);
  */
 extern void beep();
 
+
 //
 // VDP
 //
@@ -40,6 +44,7 @@ extern void __fastcall__ vdp_write_char(unsigned char c);
 extern void vdp_init_textmode();
 extern void vdp_unlock();
 extern void vdp_load_font_wrapper(const char * font, unsigned int size);
+extern void __fastcall__ vdp_write_reg(unsigned int val);
 extern void __fastcall__ vdp_write_address(unsigned int addr);
 extern void vdp_newline();
 extern void __fastcall__ vdp_console_out(const char s);
@@ -49,4 +54,26 @@ extern unsigned char vdpptr2;
 
 #define VDP_DAT *(char*) 0x9F30
 #define VDP_REG *(char*) 0x9F31
+#define VDP_TICK *(char*) 0xB50E
+#define VDP_STATUS *(char*) 0xB50F
+
+/*
+* Wait for the next VBLANK interrupt.
+*/
+void vdp_wait() {
+    while (VDP_TICK != 0x80) {;;}
+    VDP_TICK = 0;
+}
+
+//
+// GENERAL
+//
+
+void delay(uint16_t frames) {
+    while (frames > 0) {
+        vdp_wait();
+        --frames;
+    }
+}
+
 

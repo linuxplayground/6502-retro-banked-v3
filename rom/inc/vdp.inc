@@ -16,6 +16,8 @@ F18A_REG                        = F18A + 1
     rows                    .byte
     vx                      .byte
     vy                      .byte
+    tick                    .byte
+    status                  .byte
 .endstruct
 
 .macro debug16 addr

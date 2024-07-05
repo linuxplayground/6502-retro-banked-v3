@@ -8,7 +8,7 @@ BUILD_DIR = build
 BIN=conway
 CCFLAGS=-t none -Ln $(BUILD_DIR)/$(BIN).sym -C $(LIB)/6502-retro.cfg -m $(BUILD_DIR)/$(BIN).map -o $(BUILD_DIR)/$(BIN).raw -I $(LIB) -l $(BUILD_DIR)/$(BIN).lst -O
 
-all: clean bin
+all: bin
 
 bin:
 	mkdir -pv $(BUILD_DIR)

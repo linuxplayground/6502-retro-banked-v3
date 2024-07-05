@@ -13,6 +13,7 @@
 .globalzp ram_bank, rom_bank, ptr1
 
 .global strEndl
+.global vdp
 
 .code
 main:
@@ -47,6 +48,9 @@ main:
         inx
         bne :-
 
+        ; reset vdp_tick
+        stz vdp + sVdp::tick
+
         cli
 
         ; start
@@ -70,8 +74,6 @@ loop:
         beq run_dos
         cmp #'h'
         beq run_help
-        cmp #'p'
-        beq run_hopper
         cmp #'m'
         beq run_woz
         cmp #'r'
@@ -88,10 +90,6 @@ loop:
 run_woz:
         jsr wozmon
         jmp loop
-
-run_hopper:
-        lda #2
-        jmp rstfar
 run_basic:
         lda #BASIC_BANK
         jmp rstfar
@@ -127,6 +125,29 @@ cmd_help:
     bne :-
 :   rts
 
+irq:
+    pha
+    phx
+    phy
+
+    bit F18A_REG
+    bpl :+          ; not the F18A
+    lda F18A_REG
+    sta vdp+sVdp::status ; save the status register
+    lda #$80
+    sta vdp+sVdp::tick
+    ; fall through
+:   bit acia_status
+    bpl :+          ; not the acia
+:
+    bit via_ifr
+    bpl @return     ; not the via
+@return:
+    ply
+    plx
+    pla
+    rti
+
 .rodata
 prompt: .byte $0a,$0d,"> ",$0
 strWelcome: .asciiz "6502-Retro!!"
@@ -146,4 +167,4 @@ strHelp:
 .segment "VECTORS"
         .word $0000
         .word main
-        .word $0000
+        .word irq

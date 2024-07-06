@@ -1,7 +1,7 @@
 ; vim: ft=asm_ca65
 DOS_BANK     = $00
 BASIC_BANK   = $01
-FAT32_BANK   = $02
+HOPPER_BANK  = $02
 
 jsrfar3    = $0200 ; jsrfar: RAM part
 jmpfr      = $021F ; jsrfar: core jmp instruction

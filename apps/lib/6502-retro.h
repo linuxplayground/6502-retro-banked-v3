@@ -43,7 +43,7 @@ extern void __fastcall__ vdp_print(const char * s);
 extern void __fastcall__ vdp_write_char(unsigned char c);
 extern void vdp_init_textmode();
 extern void vdp_unlock();
-extern void vdp_load_font_wrapper(const char * font, unsigned int size);
+extern void vdp_load_font_wrapper(const unsigned char * font, unsigned int size);
 extern void __fastcall__ vdp_write_reg(unsigned int val);
 extern void __fastcall__ vdp_write_address(unsigned int addr);
 extern void vdp_newline();

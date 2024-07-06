@@ -39,7 +39,7 @@ void char_at_xy(uint8_t x, uint8_t y, uint8_t c) {
     VDP_DAT = c;
 }
 
-void print_at_xy(uint8_t x, uint8_t y, uint8_t * s) {
+void print_at_xy(uint8_t x, uint8_t y, const char * s) {
     addr = 0x800 + (y*80) + x;
     vdp_write_address(addr);
     do {

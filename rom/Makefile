@@ -12,6 +12,8 @@ ASFLAGS     += -g
 ASFLAGS     += --feature labels_without_colons
 # all files are allowed to use 65SC02 features
 ASFLAGS     += --cpu 65SC02
+# optimize
+ASFLAGS     += -o
 
 # DEBUG = 1
 # ASFLAGS     += -DDEBUG=$(DEBUG)
@@ -63,7 +65,8 @@ BASIC_OBJS   = $(addprefix $(BUILD_DIR)/, $(BASIC_SOURCES:.s=.o))
 
 BANK_BINS = \
 	$(BUILD_DIR)/monitor.bin \
-	$(BUILD_DIR)/basic.bin
+	$(BUILD_DIR)/basic.bin \
+	/mnt/d/Hopper/Bin/r6502.bin
 
 GENERIC_DEPS = \
 	inc/io.inc

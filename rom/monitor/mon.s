@@ -17,96 +17,101 @@
 
 .code
 main:
-        sei
-        cld
-        ldx     #$ff
-        txs
+    sei
+    cld
+    ldx #$ff
+    txs
 
-        jsr sn_start
-        jsr sn_beep
-        jsr sn_stop
+    jsr sn_start
+    jsr sn_beep
+    jsr sn_stop
 
-        jsr init_ram
+    jsr init_ram
 
-        jsr acia_init
+    jsr acia_init
 
-        lda DOS_BANK
-        sta rom_bank
-        sta ram_bank
-        sta rambankreg
+    lda DOS_BANK
+    sta rom_bank
+    sta ram_bank
+    sta rambankreg
 
-        ; for the longest time I struggled to debug why opening files was failing for me.
-        ; turns out these BSS Variables declared in dos.s must be initialised to zero.
-        ; CA65 does not initialise BSS data to 0 by default.
-        ldx #<shared_vars_len
+    ; for the longest time I struggled to debug why opening files was failing for me.
+    ; turns out these BSS Variables declared in dos.s must be initialised to zero.
+    ; CA65 does not initialise BSS data to 0 by default.
+    ldx #<shared_vars_len
 :       stz shared_vars+$ff,x
-        dex
-        bne :-
+    dex
+    bne :-
 
-        ldx #0
+    ldx #0
 :       stz shared_vars,x
-        inx
-        bne :-
+    inx
+    bne :-
 
-        ; reset vdp_tick
-        stz vdp + sVdp::tick
+    ; reset vdp_tick
+    stz vdp + sVdp::tick
 
-        cli
+    cli
 
-        ; start
-        ;
-        print strAnsiCLSHome
-        print strWelcome
-        print strHelp
+    ; start
+    ;
+    print strAnsiCLSHome
+    print strWelcome
+    print strHelp
 
-        ;
+    ;
 
 loop:
-        lda #<prompt
-        ldx #>prompt
-        jsr acia_puts
+    lda #<prompt
+    ldx #>prompt
+    jsr acia_puts
 
-        jsr acia_getc
-        jsr acia_putc
-        cmp #'b'
-        beq run_basic
-        cmp #'d'
-        beq run_dos
-        cmp #'h'
-        beq run_help
-        cmp #'m'
-        beq run_woz
-        cmp #'r'
-        beq run
-        cmp #'x'
-        beq run_xmodem
+    jsr acia_getc
+    jsr acia_putc
+    cmp #'b'
+    beq run_basic
+    cmp #'d'
+    beq run_dos
+    cmp #'p'
+    beq run_hopper
+    cmp #'h'
+    beq run_help
+    cmp #'m'
+    beq run_woz
+    cmp #'r'
+    beq run
+    cmp #'x'
+    beq run_xmodem
 
-        lda #<prompt
-        ldx #>prompt
-        jsr acia_puts
-        
-        jmp loop
+    lda #<prompt
+    ldx #>prompt
+    jsr acia_puts
+
+    jmp loop
 
 run_woz:
-        jsr wozmon
-        jmp loop
+    jsr wozmon
+    jmp loop
 run_basic:
-        lda #BASIC_BANK
-        jmp rstfar
+    lda #BASIC_BANK
+    jmp rstfar
+run_hopper:
+    lda #HOPPER_BANK
+    jmp rstfar
 run_help:
-        jsr cmd_help
-        jmp loop
+    jsr cmd_help
+    jmp loop
 run_dos:
-        jsr dos_init
-        jmp loop
+    jsr dos_init
+    jmp loop
 run:
-        jsr $0800
-        jmp loop
+    jsr $0800
+    jmp loop
 run_xmodem:
-        sei
-        jsr xmodem
-        cli
-        jmp loop
+    sei
+    jsr xmodem
+    cli
+    jmp loop
 
 cmd_help:
     print strAnsiCLSHome
@@ -165,6 +170,6 @@ strHelp:
 
 
 .segment "VECTORS"
-        .word $0000
-        .word main
-        .word irq
+    .word $0000
+    .word main
+    .word irq

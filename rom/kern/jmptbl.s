@@ -17,7 +17,7 @@
 .import sfs_write_byte
 .import sdcard_init
 .import dos_bdir
-.import sn_beep
+.import sn_start, sn_stop, sn_silence, sn_beep, sn_play_note, sn_play_noise, sn_env_note, sn_env_noise
 .import _vdp_80_col, _vdp_unlock, _vdp_lock, _vdp_print, _vdp_clear_screen
 .import _vdp_init_textmode, _vdp_write_reg, _vdp_write_address, _vdp_load_font
 .import _vdp_newline, _vdp_write_char, _vdp_console_out
@@ -30,7 +30,9 @@ jmp acia_getc_nw
 jmp acia_putc
 jmp acia_puts
 jmp prbyte
-jmp sn_beep
+nop     ;; reserve a slot here.  sn_beep moving to end of list
+nop
+nop
 jmp primm
 jmp sfs_init
 jmp sfs_mount
@@ -60,4 +62,12 @@ jmp _vdp_load_font
 jmp _vdp_newline
 jmp _vdp_write_char
 jmp _vdp_console_out
+jmp sn_start
+jmp sn_stop
+jmp sn_silence
+jmp sn_beep
+jmp sn_play_note
+jmp sn_play_noise
+jmp sn_env_note
+jmp sn_env_noise
 

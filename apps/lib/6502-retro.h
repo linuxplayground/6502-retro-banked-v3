@@ -1,3 +1,4 @@
+#include <stdint.h>
 //
 // ACIA
 //
@@ -30,7 +31,7 @@ extern void __fastcall__ prbyte(const unsigned char c);
 
 /* Generate a short beep on the speaker
  */
-extern void beep();
+extern void sn_beep();
 
 
 //

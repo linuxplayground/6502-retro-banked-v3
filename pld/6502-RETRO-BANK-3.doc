@@ -5,7 +5,7 @@
 
 CUPL(WM)        5.0a Serial# 60008009
 Device          g22v10  Library DLIB-h-40-1
-Created         Fri May 03 19:48:46 2024
+Created         Fri Jul 05 17:08:51 2024
 Name            6502-ROM-BANK-3 
 Partno          00 
 Revision        01 
@@ -29,7 +29,7 @@ Address =>
     A8 & A9 & A10 & A11 & A12 & !A13 & !A14 & A15
 
 IRQB =>
-    ACIAIRQB & VIAIRQB
+    ACIAIRQB & F18AIRQB & VIAIRQB
 
 !LOWRAMEN =>
     !A8 & A9 & A10 & A11 & A12 & !A13 & !A14 & A15
@@ -55,6 +55,9 @@ IRQB =>
 
 !ROMEN =>
     A14 & A15
+
+F18AIRQB.oe  =>
+    0 
 
 HIRAMEN.oe  =>
     1 
@@ -96,6 +99,7 @@ Pol   Name              Ext     Pin     Type     Used   Pterms  Level
     A15                         3        V        -       -       -     
     ACIAIRQB                    11       V        -       -       -     
     Address                     0        F        -       -       -     
+    F18AIRQB                    14       V        -       -       -     
     HIRAMEN                     19       V        1       16      1     
     IOCS                        17       V        1       14      1     
     IRQB                        23       V        1       8       1     
@@ -106,6 +110,7 @@ Pol   Name              Ext     Pin     Type     Used   Pterms  Level
     ROMEN                       20       V        1       14      1     
     RW                          2        V        -       -       -     
     VIAIRQB                     13       V        -       -       -     
+    F18AIRQB            oe      14       D        1       1       0     
     HIRAMEN             oe      19       D        1       1       0     
     IOCS                oe      17       D        1       1       0     
     IRQB                oe      23       D        1       1       0     
@@ -133,7 +138,7 @@ AR
 
 Pin #23  05808 Mode  -- 
  00044 -------------------------------------------- 
- 00088 ----------------------------------------x-x- 
+ 00088 --------------------------------------x-x-x- 
  00132 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 
  00176 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 
  00220 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 
@@ -261,7 +266,7 @@ Pin #15  05824 Mode  x-
  05236 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 
  05280 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 
  05324 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 
-Pin #14  05826 Mode  xx 
+Pin #14  05826 Mode  x- 
  05368 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 
  05412 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 
  05456 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 
@@ -292,7 +297,7 @@ LEGEND    X : fuse not blown
                       A10 x---|8           17|---x IOCS                     
                        A9 x---|9           16|---x MEMOE                    
                        A8 x---|10          15|---x MEMWE                    
-                 ACIAIRQB x---|11          14|---x                          
+                 ACIAIRQB x---|11          14|---x F18AIRQB                 
                       GND x---|12          13|---x VIAIRQB                  
                               |______________|
 

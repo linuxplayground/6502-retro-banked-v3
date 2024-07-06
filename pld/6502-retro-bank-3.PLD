@@ -1,7 +1,7 @@
-Name     6502-ROM-BANK-3 ;
+Name     6502-Retro;
 PartNo   00 ;
-Date     21/08/2023 ;
-Revision 01 ;
+Date     06/07/2024 ;
+Revision 03 ;
 Designer Engineer ;
 Company  productiondave ;
 Assembly None ;
@@ -14,6 +14,7 @@ Pin 2        = RW;
 Pin [3..10]  = [A15..A8];
 Pin 11       = ACIAIRQB;
 Pin 13       = VIAIRQB;
+Pin 14       = F18AIRQB;
 
 FIELD Address = [A15..A8];
 
@@ -33,7 +34,7 @@ Pin 23 = IRQB;
 !IOCS        = Address:[9F00..9FFF];
 !LOWRAMEN    = Address:[0000..9EFF];
 
-!MEMWE    	= PHI2 & !RW;
-!MEMOE    	= PHI2 & RW;
+!MEMWE       = PHI2 & !RW;
+!MEMOE       = PHI2 & RW;
 
-IRQB          = ACIAIRQB & VIAIRQB;
+IRQB          = ACIAIRQB & VIAIRQB & F18AIRQB;

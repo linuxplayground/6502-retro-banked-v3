@@ -5,7 +5,7 @@ BUILD_DIR = build
 
 .PHONY: clean all
 
-all: clean vgm
+all: clean vgm piano
 	mkdir -pv $(BUILD_DIR)
 	ca65 --cpu 65c02 -I $(ROM)/inc -l $(BUILD_DIR)/sn76489.lst -o $(BUILD_DIR)/main.o main.s
 	ld65 -C sn76489an.cfg -o $(BUILD_DIR)/sn76489an.raw -m $(BUILD_DIR)/sn76489an.map $(BUILD_DIR)/main.o

@@ -12,8 +12,6 @@ ASFLAGS     += -g
 ASFLAGS     += --feature labels_without_colons
 # all files are allowed to use 65SC02 features
 ASFLAGS     += --cpu 65SC02
-# optimize
-ASFLAGS     += -o
 
 # DEBUG = 1
 # ASFLAGS     += -DDEBUG=$(DEBUG)

@@ -2,7 +2,7 @@
 ; Library functions for basic control of the SN76489 attached to the VIA
 
 .include "io.inc"
-.export sn_start, sn_stop, sn_silence, sn_beep, play_note_chan_1 
+.export sn_start, sn_stop, sn_silence, sn_beep, sn_play_note, sn_play_noise, sn_env_note, sn_env_noise
 
 FIRST   = %10000000
 SECOND  = %00000000
@@ -21,7 +21,7 @@ SN_WE   = %00000100
 SN_READY= %00001000
 SD_MOSI = %10000000
 
-C1_SUSTAIN    = $1B
+C1_SUSTAIN  = $1B
 C1_DECAY    = $1C
 
 .code
@@ -60,7 +60,7 @@ sn_silence:
 sn_beep:
     lda #$07
     ldy #$04
-    jsr play_note_chan_1
+    jsr sn_play_note 
     ldy #$40
 @d1:
     ldx #$00
@@ -73,7 +73,7 @@ sn_beep:
     jsr sn_silence
     rts
 
-play_note_chan_1:
+sn_play_note:
     ora #(FIRST|CHAN_1|TONE)
     jsr sn_send
     tya
@@ -87,7 +87,7 @@ play_note_chan_1:
     sta C1_DECAY
     rts
 
-sn_env_chan_1:
+sn_env_note:
     lda #%01000000
 @wait:
     bit via_ifr
@@ -97,15 +97,15 @@ sn_env_chan_1:
     beq :+
     dec C1_SUSTAIN
     bra @wait
-:     lda C1_DECAY
+:   lda C1_DECAY
     cmp #$0f
     beq :+
     inc C1_DECAY
     lda C1_DECAY
     ora #(FIRST|CHAN_1|VOL)
     jsr sn_send
-    bra sn_env_chan_1    ; we want to keep doing the loop until decay is finished.
-:    rts
+    bra sn_env_note; we want to keep doing the loop until decay is finished.
+:   rts
 
 ; Byte to send in A
 sn_send:
@@ -125,3 +125,7 @@ sn_wait:
     bne sn_wait
     rts
 
+sn_play_noise:
+    rts
+sn_env_noise:
+    rts

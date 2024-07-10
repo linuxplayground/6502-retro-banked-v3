@@ -5,7 +5,7 @@ def calculate_frequency(note, octave):
     Calculate the frequency of a note at a given octave.
     Formula: 2^(n/12) * 440 Hz, where n is the number of semitones from A4.
     """
-    semitones_from_a4 = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+    semitones_from_a4 = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#' ]
     semitones_difference = semitones_from_a4.index(note)
     return 2 ** ((semitones_difference + (octave - 4) * 12) / 12) * 440.0
 
@@ -13,7 +13,7 @@ def generate_note_list():
     """
     Generate a list of frequencies and their note names from C1 to B7.
     """
-    note_names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+    note_names = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#' ]
     note_list = []
 
     for octave in range(1, 8):

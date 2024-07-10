@@ -265,4 +265,4 @@ SHWMSG:
         RTS
 
 
-MSG1:      .BYTE "Welcome to EWOZ 1.0.",0
+MSG1:      .BYTE "EWOZ 1.0. @ 0x9000",0

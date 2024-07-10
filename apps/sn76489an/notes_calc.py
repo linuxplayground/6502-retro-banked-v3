@@ -1,5 +1,5 @@
 
-clock = 2000000
+clock = 5000000
 freqs = [{"name": "C", "freq":262},
          {"name": "CS","freq":277},
          {"name": "D", "freq":294},

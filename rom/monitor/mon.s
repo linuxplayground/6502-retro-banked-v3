@@ -8,6 +8,7 @@
 .import jsrfar, init_ram, shared_vars, shared_vars_len
 .import wozmon, xmodem
 .import dos_init, strAnsiCLSHome
+.import readline, readline_init, read_address_from_input, address, inbuf
 .import sn_start, sn_beep, sn_stop
 
 .globalzp ram_bank, rom_bank, ptr1
@@ -105,7 +106,7 @@ run_dos:
     jsr dos_init
     jmp loop
 run:
-    jsr $0800
+    jsr cmd_run
     jmp loop
 run_xmodem:
     sei
@@ -129,6 +130,17 @@ cmd_help:
     inc ptr1 +1
     bne :-
 :   rts
+
+cmd_run:
+    jsr readline_init
+    print strRunPrompt
+    jsr readline
+    lda inbuf
+    beq :+
+    ldy #0
+    jsr read_address_from_input
+    jmp (address)
+:   jmp $0800
 
 irq:
     pha
@@ -167,7 +179,10 @@ strHelp:
     .byte "m => Wozmon", $0a,$0d
     .byte "r => Run from 0x800", $0a,$0d
     .byte "x => Xmodem receive", $0a,$0d,$0a,$0d,$0
-
+strRunPrompt: 
+    .byte $0a,$0d
+    .byte "Enter address or ENTER to jump to 0x800: "
+    .byte $0
 
 .segment "VECTORS"
     .word $0000

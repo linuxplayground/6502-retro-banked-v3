@@ -5,6 +5,8 @@
 .include "../sfs/structs.inc"
 .include "../sfs/sfs.inc"
 
+.export read_address_from_input
+
 SD_CS           = %00000010
 SD_SCK          = %00000001
 SD_MOSI         = %10000000
@@ -309,15 +311,22 @@ cmd_cat:
 @done:
     jsr primm
     .byte 10, 13, "END OF FILE",0
-	jsr sfs_close
-	bcc @error
-	rts
+    jsr sfs_close
+    bcc @error
+    rts
 @error:
-	jmp convert_error
+    jmp convert_error
 
 cmd_run:
-	jsr $0800
-	rts
+    jsr readline_init
+    print strRunPrompt
+    jsr readline
+    lda inbuf
+    beq :+
+    ldy #0
+    jsr read_address_from_input
+    jmp (address)
+:   jmp $0800
 
 cmd_format:
 	lda #<strAreYouSure
@@ -493,3 +502,9 @@ strHelp:
 	.byte "t => cat <filename> - prints all printable chars from file until eof.", $0a,$0d
 	.byte "q => quit",$0a,$0d
 	.byte "u => unlink",$0a,$0d,$0a,$0d,$0
+strRunPrompt: 
+    .byte $0a,$0d
+    .byte "Enter address or ENTER to jump to 0x800: "
+    .byte $0
+
+

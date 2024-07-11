@@ -9,6 +9,6 @@ acia_getc_nw    = $FF06
 acia_putc       = $FF09 
 acia_puts       = $FF0C 
 prbyte          = $FF0F 
-sn_beep         = $FF12 
+sn_beep         = $FF75
 primm           = $FF15 
 

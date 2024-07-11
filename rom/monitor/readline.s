@@ -49,4 +49,4 @@ readline:
         rts
 
 .rodata
-strPrompt:      .asciiz "SD> "
+strPrompt:      .asciiz "$> "

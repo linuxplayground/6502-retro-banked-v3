@@ -11,7 +11,7 @@
 .import readline, readline_init, read_address_from_input, address, inbuf
 .import sn_start, sn_beep, sn_stop
 
-.globalzp ram_bank, rom_bank, ptr1
+.globalzp ram_bank, rom_bank, ptr1, krn_ptr1
 
 .global strEndl
 .global vdp
@@ -83,6 +83,8 @@ loop:
     beq run
     cmp #'x'
     beq run_xmodem
+    cmp #'X'
+    beq run_xmodem_highram
 
     lda #<prompt
     ldx #>prompt
@@ -108,7 +110,20 @@ run_dos:
 run:
     jsr cmd_run
     jmp loop
+run_xmodem_highram:
+    inc krn_ptr1
+    lda #1
+    sta rambankreg
+    sta ram_bank
+    sei
+    jsr xmodem
+    cli
+    stz krn_ptr1
+    stz rambankreg
+    stz ram_bank
+    jmp loop
 run_xmodem:
+    stz krn_ptr1
     sei
     jsr xmodem
     cli
@@ -178,7 +193,9 @@ strHelp:
     .byte "p => Hopper", $0a, $0d
     .byte "m => Wozmon", $0a,$0d
     .byte "r => Run from 0x800", $0a,$0d
-    .byte "x => Xmodem receive", $0a,$0d,$0a,$0d,$0
+    .byte "x => Xmodem receive", $0a,$0d
+    .byte "X => Xmodem receive into extended memory", $0a, $0d
+    .byte $0a,$0d,$0
 strRunPrompt: 
     .byte $0a,$0d
     .byte "Enter address or ENTER to jump to 0x800: "

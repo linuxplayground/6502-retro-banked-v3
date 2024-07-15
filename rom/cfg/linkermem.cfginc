@@ -9,5 +9,6 @@
         
         /* Kernel memory routines */
         KERNRAM:  start = $0200, size = $0100, file="";
+	XMODEMBUF: start= $0300, size = $0200, file="";
         DOSDAT:   start = $B000, size = $0500;
 

@@ -1,7 +1,8 @@
 ; vim: ft=asm_ca65
-
+.include "io.inc"
 ; .import xstart, xend
-.import acia_getc_nw, acia_putc
+.import acia_getc_nw, acia_putc, bank_save
+.importzp krn_ptr1, ram_bank
 
 .export xmodem
 
@@ -14,7 +15,7 @@ CR      =    $0d        ; carriage return
 LF      =    $0a        ; line feed
 ESC     =    $1b        ; ESC to exit
 
-.segment "KERNBUF"
+.segment "XMODEMBUF"
 Rbuff:   .res 512 ; reuse the sdcard sector buffer here.
 
 .segment "MONZP" : zeropage
@@ -123,6 +124,13 @@ GoodCrc:
         bne    CopyBlk          ; no, copy all 128 bytes
         lda    bflag            ; is it really block 1, not block 257, 513 etc.
         beq    CopyBlk          ; no, copy all 128 bytes
+        lda    krn_ptr1         ; if HighRam is non zero then save data into HIGH RAM.  Else use given target address.
+        beq    @get_target_address
+        stz    ptr
+        lda    #$A0
+        sta    ptr + 1
+        jmp    @get_target_address_end
+@get_target_address:            ; in this case, the first 2 bytes contain the start address to save to.
         lda    Rbuff,x          ; get target address from 1st 2 bytes of blk 1
         sta    ptr              ; save lo address
         ; sta    xstart           ; save target address for use by save call if called on time.
@@ -131,6 +139,7 @@ GoodCrc:
         sta    ptr+1            ; save it
         ; sta    xstart+1         ; save target address for use by save call if called on time.
         inx                     ; point to first byte of data
+@get_target_address_end:
         dec    bflag            ; set the flag so we won't get another address
 CopyBlk:
         ldy    #$00             ; set offset to zero
@@ -140,6 +149,17 @@ CopyBlk3:
         inc    ptr              ; point to next address
         bne    CopyBlk4         ; did it step over page boundary?
         inc    ptr+1            ; adjust high address for page crossing
+
+;;      CHECK IF ptr points past top of high ram.  Increment rambank if it does.
+        lda    ptr+1
+        cmp    #$C0
+        bne    CopyBlk4
+        lda    #$A0
+        sta    ptr + 1
+        inc    ram_bank 
+        lda    ram_bank
+        sta    rambankreg
+        sta    bank_save
 CopyBlk4:
         inx                     ; point to next data byte
         cpx    #$82             ; is it the last byte

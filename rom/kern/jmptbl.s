@@ -17,7 +17,7 @@
 .import sfs_write_byte
 .import sdcard_init
 .import dos_bdir
-.import sn_start, sn_stop, sn_silence, sn_beep, sn_play_note, sn_play_noise, sn_env_note, sn_env_noise
+.import sn_start, sn_stop, sn_silence, sn_beep, sn_play_note, sn_play_noise, sn_env_note, sn_env_noise, sn_send
 .import _vdp_80_col, _vdp_unlock, _vdp_lock, _vdp_print, _vdp_clear_screen
 .import _vdp_init_textmode, _vdp_write_reg, _vdp_write_address, _vdp_load_font
 .import _vdp_newline, _vdp_write_char, _vdp_console_out
@@ -70,4 +70,5 @@ jmp sn_play_note
 jmp sn_play_noise
 jmp sn_env_note
 jmp sn_env_noise
+jmp sn_send
 

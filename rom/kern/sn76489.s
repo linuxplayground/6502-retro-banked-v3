@@ -2,7 +2,7 @@
 ; Library functions for basic control of the SN76489 attached to the VIA
 
 .include "io.inc"
-.export sn_start, sn_stop, sn_silence, sn_beep, sn_play_note, sn_play_noise, sn_env_note, sn_env_noise
+.export sn_start, sn_stop, sn_silence, sn_beep, sn_play_note, sn_play_noise, sn_env_note, sn_env_noise, sn_send
 
 FIRST   = %10000000
 SECOND  = %00000000

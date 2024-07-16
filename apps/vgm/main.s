@@ -14,13 +14,13 @@ vgmptrh   = $F1
 vgmwaitl  = $F2
 vgmwaith  = $F3
 
-prbyte    = $D13E
-sn_silence = $D3C0
-sn_start  = $D39F
-sn_send   = $D427
-sn_stop   = $D3BC
-primm     = $D447
-acia_putc = $D63D
+acia_putc = $FF09
+prbyte          = $FF0F
+primm           = $FF15
+sn_start        = $FF6C
+sn_stop         = $FF6F
+sn_silence      = $FF72
+sn_send         = $FF84
 
 .code
     jsr sn_start

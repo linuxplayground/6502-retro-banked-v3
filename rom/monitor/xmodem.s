@@ -1,8 +1,8 @@
 ; vim: ft=asm_ca65
 .include "io.inc"
 ; .import xstart, xend
-.import acia_getc_nw, acia_putc, bank_save
-.importzp krn_ptr1, ram_bank
+.import acia_getc_nw, acia_putc
+.importzp krn_ptr1, ram_bank, bank_save
 
 .export xmodem
 

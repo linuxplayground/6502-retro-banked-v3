@@ -12,3 +12,7 @@ prbyte          = $FF0F
 sn_beep         = $FF75
 primm           = $FF15 
 
+sn_start        = $FF6C
+sn_stop         = $FF6F
+sn_silence      = $FF72
+sn_send         = $FF84

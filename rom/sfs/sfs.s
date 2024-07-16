@@ -1,4 +1,5 @@
 ; vim: ft=asm_ca65
+.include "io.inc"
 .include "sdcard.inc"
 .include "kern.inc"
 .include "sfs.inc"
@@ -425,6 +426,16 @@ sfs_write:
         clc
         rts
 @2:
+        ldx #0
+        stx ram_bank
+        stx rambankreg
+        nop
+        lda sfs_data_ptr + 1
+        cmp #$A0
+        bne @3a
+        ldx #1
+        stx ram_bank
+
         ; set up sector LBA
         lda index + sIndex::start + 0
         sta sector_lba + 0
@@ -442,8 +453,14 @@ sfs_write:
         sta sfs_ptr
         lda #>sector_buffer
         sta sfs_ptr + 1
+
 @3a:
+        ldx ram_bank
+        stx rambankreg
+        nop
         lda (sfs_data_ptr)      ; save a byte
+        stz rambankreg
+        nop
         sta (sfs_ptr)
 
         lda sfs_bytes_rem       ; decrement bytes_rem until zero
@@ -456,6 +473,12 @@ sfs_write:
         inc sfs_data_ptr        ; increment data pointer
         bne @3c
         inc sfs_data_ptr + 1
+        lda sfs_data_ptr + 1
+        cmp #$C0
+        bne @3c
+        inc ram_bank
+        lda #$A0
+        sta sfs_data_ptr + 1
 
 @3c:    clc
         lda sfs_ptr
@@ -527,6 +550,15 @@ sfs_read:
         lda index + sIndex::start + 3
         sta sector_lba + 3
 
+        ldx #0
+        stx ram_bank
+        stx rambankreg
+        nop
+        lda sfs_data_ptr + 1
+        cmp #$A0
+        bne @loop
+        ldx #1
+        stx ram_bank
 @loop:
         ; load from disk into sector_buffer, then copy sector buffer into dataptr
         ; until bytes remaining = 0
@@ -536,19 +568,31 @@ sfs_read:
         lda #>sector_buffer
         sta sfs_ptr + 1
 @1:
+        stz rambankreg
+        nop
         lda (sfs_ptr)
+        ldx ram_bank
+        stx rambankreg 
+        nop
         sta (sfs_data_ptr)
-        
+        stz rambankreg
+        nop
         lda sfs_bytes_rem       ; decrement bytes_rem until zero
         bne @1b
         lda sfs_bytes_rem + 1
         beq @done                ; done
         dec sfs_bytes_rem + 1
 @1b:    dec sfs_bytes_rem
-        
+
         inc sfs_data_ptr        ; inc data pointer
         bne @1c
         inc sfs_data_ptr + 1
+        lda sfs_data_ptr + 1
+        cmp #$C0
+        bne @1c
+        inc ram_bank
+        lda #$A0
+        sta sfs_data_ptr + 1
 @1c:
         inc sfs_ptr             ; increment buffer pointer
         bne @1

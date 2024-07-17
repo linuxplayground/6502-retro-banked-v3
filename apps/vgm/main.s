@@ -26,7 +26,7 @@ sn_send   = $FF84
     jsr sn_start
     jsr sn_silence
     jsr vgm_setup
-    ldy #$80        ; all samples I have seen begin at 0x80 in the file.
+    ;ldy #$40        ; all samples I have seen begin at 0x80 in the file.
     jsr vgm_play
     jsr sn_stop
     rts
@@ -40,6 +40,11 @@ vgm_setup:
     stz vgmptr
     lda #$A0
     sta vgmptr + 1
+    ldy #$34
+    lda (vgmptr),y
+    clc
+    adc #$34
+    tay
     rts
 
 
@@ -51,6 +56,8 @@ vgm_play:
     beq @end
     cmp #$61
     beq @wait
+    cmp #$63
+    beq @fiftieth
     cmp #$62
     beq @sixtieth
     and #$F0
@@ -68,6 +75,8 @@ vgm_play:
     jmp n1
 @sixtieth:
     jmp sixtieth
+@fiftieth:
+    jmp fiftieth
 @end:
     jmp end
 @cmd_a0:
@@ -146,6 +155,13 @@ end:                    ; reset the rambank and silence the PSG
     stz rambankreg
     jmp sn_silence
 
+fiftieth:
+    lda #$72
+    sta vgmwaitl
+    lda #$03
+    sta vgmwaith
+    jsr vgmwait
+    jmp vgm_next
 sixtieth:               ; as given by the datasheet wait for exactly 1/60
     lda #$df            ; of a second.
     sta vgmwaitl

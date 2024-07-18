@@ -430,6 +430,7 @@ sfs_write:
         stx ram_bank
         stx rambankreg
         nop
+        nop
         lda sfs_data_ptr + 1
         cmp #$A0
         bne @3a
@@ -458,8 +459,10 @@ sfs_write:
         ldx ram_bank
         stx rambankreg
         nop
+        nop
         lda (sfs_data_ptr)      ; save a byte
         stz rambankreg
+        nop
         nop
         sta (sfs_ptr)
 
@@ -554,6 +557,7 @@ sfs_read:
         stx ram_bank
         stx rambankreg
         nop
+        nop
         lda sfs_data_ptr + 1
         cmp #$A0
         bne @loop
@@ -570,12 +574,15 @@ sfs_read:
 @1:
         stz rambankreg
         nop
+        nop
         lda (sfs_ptr)
         ldx ram_bank
         stx rambankreg 
         nop
+        nop
         sta (sfs_data_ptr)
         stz rambankreg
+        nop
         nop
         lda sfs_bytes_rem       ; decrement bytes_rem until zero
         bne @1b

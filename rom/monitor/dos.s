@@ -33,6 +33,10 @@ dos_init:
         newline
         print strWelcome
 
+        stz rambankreg
+        nop
+        nop
+
 input_loop:
         jsr readline
         ldy #0

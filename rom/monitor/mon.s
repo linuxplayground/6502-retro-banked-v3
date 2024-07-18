@@ -35,6 +35,8 @@ main:
     sta rom_bank
     sta ram_bank
     sta rambankreg
+    nop
+    nop
 
     ; for the longest time I struggled to debug why opening files was failing for me.
     ; turns out these BSS Variables declared in dos.s must be initialised to zero.
@@ -114,12 +116,16 @@ run_xmodem_highram:
     inc krn_ptr1
     lda #1
     sta rambankreg
+    nop
+    nop
     sta ram_bank
     sei
     jsr xmodem
     cli
     stz krn_ptr1
     stz rambankreg
+    nop
+    nop
     stz ram_bank
     jmp loop
 run_xmodem:

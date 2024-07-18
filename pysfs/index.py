@@ -20,7 +20,7 @@ class Index(object):
     @staticmethod
     def name2filename(filename):
         # name_len = len(filename)
-        name_bytes = f'{filename[:21]}'.ljust(21, ' ')
+        name_bytes = f'{filename[:21]}\0'.ljust(21, ' ')
         return name_bytes
     
     def index2ba(self):

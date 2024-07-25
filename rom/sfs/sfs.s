@@ -175,7 +175,7 @@ sfs_load_index_block:
         lda #>sector_buffer
         sta sfs_ptr + 1
         stz sfs_read_first_index_flag   ; prepare to read first index
-        
+
         lda #ERRNO_OK
         sta sfs_errno
                 rts
@@ -426,6 +426,16 @@ sfs_write:
         clc
         rts
 @2:
+        ; set up sector LBA
+        lda index + sIndex::start + 0
+        sta sector_lba + 0
+        lda index + sIndex::start + 1
+        sta sector_lba + 1
+        lda index + sIndex::start + 2
+        sta sector_lba + 2
+        lda index + sIndex::start + 3
+        sta sector_lba + 3
+
         ldx #0
         stx ram_bank
         stx rambankreg
@@ -436,16 +446,6 @@ sfs_write:
         bne @3a
         ldx #1
         stx ram_bank
-
-        ; set up sector LBA
-        lda index + sIndex::start + 0
-        sta sector_lba + 0
-        lda index + sIndex::start + 1
-        sta sector_lba + 1
-        lda index + sIndex::start + 2
-        sta sector_lba + 2
-        lda index + sIndex::start + 3
-        sta sector_lba + 3
 
         ; copy bytes_rem data from data_ptr to sector buffer.
         ; flush each time the buffer is full until bytes_rem = 0

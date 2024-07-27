@@ -26,9 +26,9 @@ ACIAIRQB x---|11          14|---x F18AIRQB
 ![memory_bank_logic](./memory_bank_logic.png)
 
 The PLD sets the input signals to the memory devices themselves (not shown on
-this diagram - see the full ![schematic](./ARCHIVE/6502-retro-bank-v3.pdf))as
-well as the bank registers.  The Bank registers are selected first by the IO
-SELECT Demultiplexer and then by the RAM/ROM Switch Demultiplexer.
+this diagram - see the full [schematic](./6502-retro-bank-v3.pdf)) as well as
+the bank registers.  The Bank registers are selected first by the IO SELECT
+Demultiplexer and then by the RAM/ROM Switch Demultiplexer.
 
 A write 0x9F00 will be latched into the RAM Bank Register which is hardwired to
 the upper address pins on the extended memory SRAM IC.

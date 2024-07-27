@@ -47,7 +47,7 @@ RAM.  There are two types of storage options.
 The save command takes 3 arguments:  Filename, Starting location in RAM, size of
 file to save in BYTES given as hexadecimal.
 
-```
+```text
 save hello.bin 0800 0042
 ```
 
@@ -66,7 +66,7 @@ then saving the file to SDCARD starting at address 0xA000.
 
 ### Loading a file from SDCARD into RAM
 
-```
+```text
 load filename start(16)
 ```
 
@@ -79,7 +79,7 @@ load filename start(16)
 The process to load a file from SDCARD into RAM requires the filename to be
 provided and the start address to save the file into.
 
-```
+```text
 load hello.bin 0800
 ```
 
@@ -100,4 +100,3 @@ command can be used to execute it.
 The run command prompts for an address to run from.  If none is provided by
 simply pressing enter without giving an address, the Run command will default to
 executing code at 0x800.
-

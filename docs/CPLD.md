@@ -3,7 +3,7 @@
 The AT22V10C PLD is used to arbitatrate the control signals to the various
 memory and other devices in the computer.
 
-```
+```text
               ______________
              |6502-Retro!  -|
     PHI2 x---|1           24|---x Vcc
@@ -26,9 +26,9 @@ ACIAIRQB x---|11          14|---x F18AIRQB
 ![memory_bank_logic](./memory_bank_logic.png)
 
 The PLD sets the input signals to the memory devices themselves (not shown on
-this diagram - see the full ![schematic](./ARCHIVE/6502-retro-bank-v3.pdf))as well as the
-bank registers.  The Bank registers are selected first by the IO SELECT
-Demultiplexer and then by the RAM/ROM Switch Demultiplexer.
+this diagram - see the full ![schematic](./ARCHIVE/6502-retro-bank-v3.pdf))as
+well as the bank registers.  The Bank registers are selected first by the IO
+SELECT Demultiplexer and then by the RAM/ROM Switch Demultiplexer.
 
 A write 0x9F00 will be latched into the RAM Bank Register which is hardwired to
 the upper address pins on the extended memory SRAM IC.
@@ -53,4 +53,3 @@ The extended memory is used mostly for data.  There is a special invocation of
 the XModem Tool on BANK 0 that you can use to load large files into the extended
 memory.  The tool begins loading data into BANK 1 and will fill up as many banks
 as required to complete the load.
-

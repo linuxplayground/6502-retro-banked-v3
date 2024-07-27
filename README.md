@@ -20,26 +20,26 @@ This is version 3 of the 6502-Retro! design.
 - WD65C22 Versatile Interface Adaptor (VIA)
 - R6551 Rockwell UART Adapter
 - SN76489 Programmable Sound Generator
-    - Header connector for amplified speaker
+  - Header connector for amplified speaker
 - F18A Video Display Processor - FPGA Emulating TMS9918A
 
 ## ROM ALLOCATIONS
 
 - Bank 0: 6502-Retro! OS
-    - System menu
-    - Wozmon
-    - DOS
+  - System menu
+  - Wozmon
+  - DOS
         Simple File System (SFS) a custom, minimal filesystem for use with the
         6502-Retro!
     - Xmodem
 - Bank 2: ehBasic
-    - ehBasic is extended to support the following extra commands:
-        - dir - File listing
-        - load - Load a BASIC file from the SDCARD in raw ASCII listing form.
-        - save - Save a BASIC file to the SDCARD in raw ASCII listing form.
-        - beep - Emit a short beep from the speaker.
+  - ehBasic is extended to support the following extra commands:
+    - dir - File listing
+    - load - Load a BASIC file from the SDCARD in raw ASCII listing form.
+    - save - Save a BASIC file to the SDCARD in raw ASCII listing form.
+    - beep - Emit a short beep from the speaker.
 - Bank 3: Hopper HS (https://github.com/sillycowvalley/Hopper)
-- Bank 4: EMPTY
+- Bank 4: smon6502 - [https://github.com/dhansel/smon6502/tree/main](https://github.com/dhansel/smon6502/tree/main)
 
 ## Memory Banking Logic
 
@@ -70,7 +70,7 @@ following settings:
 |0x9F11         |ACIA Status
 |0x9F12         |ACIA Command
 |0x9F13         |ACIA Control
-|               |
+|---            |---
 |9F20           |VIA Port B
 |9F21           |VIA Port A
 |9F22           |VIA Data Direction B
@@ -87,7 +87,6 @@ following settings:
 |9F2D           |VIA Interrupt Flags Register
 |9F2E           |VIA Interrupt Enable Register
 |9F2F           |VIA PORT A (No Handshake)
-|               |
+|---            |---
 |0x9F30         |F18A RAM
 |0x9F31         |F18A Register
-

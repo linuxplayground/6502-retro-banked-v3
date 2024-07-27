@@ -64,7 +64,9 @@ BASIC_OBJS   = $(addprefix $(BUILD_DIR)/, $(BASIC_SOURCES:.s=.o))
 BANK_BINS = \
 	$(BUILD_DIR)/monitor.bin \
 	$(BUILD_DIR)/basic.bin \
-	/mnt/d/Hopper/Bin/r6502.bin
+	/mnt/d/Hopper/Bin/r6502.bin \
+	./smon/build/smon.bin
+
 
 GENERIC_DEPS = \
 	inc/io.inc

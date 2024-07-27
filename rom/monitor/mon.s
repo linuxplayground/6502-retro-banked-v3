@@ -58,11 +58,7 @@ main:
 
     ; start
     ;
-    print strAnsiCLSHome
-    print strWelcome
-    print strHelp
-
-    ;
+    jsr cmd_help
 
 loop:
     lda #<prompt
@@ -83,6 +79,8 @@ loop:
     beq run_woz
     cmp #'r'
     beq run
+    cmp #'s'
+    beq run_smon
     cmp #'x'
     beq run_xmodem
     cmp #'X'
@@ -102,6 +100,9 @@ run_basic:
     jmp rstfar
 run_hopper:
     lda #HOPPER_BANK
+    jmp rstfar
+run_smon:
+    lda #SMON_BANK
     jmp rstfar
 run_help:
     jsr cmd_help
@@ -138,18 +139,8 @@ run_xmodem:
 cmd_help:
     print strAnsiCLSHome
     print strWelcome
-    newline
-    lda #<strHelp
-    sta ptr1
-    lda #>strHelp
-    sta ptr1 + 1
-:   lda (ptr1)
-    beq :+
-    jsr acia_putc
-    inc ptr1
-    bne :-
-    inc ptr1 +1
-    bne :-
+    print strHelp
+    print strCommands
 :   rts
 
 cmd_run:
@@ -192,13 +183,15 @@ strWelcome: .asciiz "6502-Retro!!"
 strHelp:
     .byte $0a,$0d
     .byte "USAGE INSTRUCTIONS", $0a,$0d
-    .byte "==============================================================================",$0a,$0d
+    .byte "==============================================================================",$0a,$0d,$0
+strCommands:
     .byte "h => help", $0a,$0d
     .byte "b => ehBasic", $0a,$0d
     .byte "d => DOS", $0a, $0d
     .byte "p => Hopper", $0a, $0d
     .byte "m => Wozmon", $0a,$0d
     .byte "r => Run from 0x800", $0a,$0d
+    .byte "s => Run SMON", $0a,$0d
     .byte "x => Xmodem receive", $0a,$0d
     .byte "X => Xmodem receive into extended memory", $0a, $0d
     .byte $0a,$0d,$0

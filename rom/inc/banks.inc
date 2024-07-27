@@ -2,6 +2,7 @@
 DOS_BANK     = $00
 BASIC_BANK   = $01
 HOPPER_BANK  = $02
+SMON_BANK    = $03
 
 jsrfar3    = $0200 ; jsrfar: RAM part
 jmpfr      = $021F ; jsrfar: core jmp instruction

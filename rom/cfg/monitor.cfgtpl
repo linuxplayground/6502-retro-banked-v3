@@ -1,7 +1,7 @@
 MEMORY {
         #include "linkermem.cfginc"
         KERNBUF: start=$A000, size=$1000, file="";
-        VDPRAM: start = $B500, size = $0100, file=""; 
+        VDPRAM: start = $B500, size = $0600, file=""; 
         ROM: start = $C000, size = $3F00, fill=yes, fillval=$AA;
         JMPTBL: start = $FF00, size = $00FA, fill=yes, fillval=$00;
         VECTORS:  start = $FFFA, size = $0006, fill=yes, fillval=$AA;

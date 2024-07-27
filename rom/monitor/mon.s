@@ -14,7 +14,7 @@
 .globalzp ram_bank, rom_bank, ptr1, krn_ptr1
 
 .global strEndl
-.global vdp
+.global _vdp
 
 .code
 main:
@@ -52,7 +52,7 @@ main:
     bne :-
 
     ; reset vdp_tick
-    stz vdp + sVdp::tick
+    stz _vdp + sVdp::tick
 
     cli
 
@@ -171,9 +171,9 @@ irq:
     bit F18A_REG
     bpl :+          ; not the F18A
     lda F18A_REG
-    sta vdp+sVdp::status ; save the status register
+    sta _vdp+sVdp::status ; save the status register
     lda #$80
-    sta vdp+sVdp::tick
+    sta _vdp+sVdp::tick
     ; fall through
 :   bit acia_status
     bpl :+          ; not the acia

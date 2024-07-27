@@ -43,27 +43,44 @@ extern void vdp_80_col();
 extern void __fastcall__ vdp_print(const char * s);
 extern void __fastcall__ vdp_write_char(unsigned char c);
 extern void vdp_init_textmode();
+extern void vdp_init_g2mode();
 extern void vdp_unlock();
 extern void vdp_load_font_wrapper(const unsigned char * font, unsigned int size);
 extern void __fastcall__ vdp_write_reg(unsigned int val);
 extern void __fastcall__ vdp_write_address(unsigned int addr);
 extern void vdp_newline();
 extern void __fastcall__ vdp_console_out(const char s);
+extern void vdp_flush();
 
 extern unsigned char vdpptr1;
 extern unsigned char vdpptr2;
+extern unsigned char screenbuf[0x300];
 
 #define VDP_DAT *(char*) 0x9F30
 #define VDP_REG *(char*) 0x9F31
-#define VDP_TICK *(char*) 0xB50E
-#define VDP_STATUS *(char*) 0xB50F
+
+struct __sVdp {
+    uint16_t nametable;
+    uint16_t colortable;
+    uint16_t patterntable;
+    uint16_t spriteattributetable;
+    uint16_t spritepatterntable;
+    uint8_t cols;
+    uint8_t rows;
+    uint8_t vx;
+    uint8_t vy;
+    uint8_t tick;
+    uint8_t status;
+};
+
+#define VDP  (*(volatile struct __sVdp *)0xB500)
 
 /*
 * Wait for the next VBLANK interrupt.
 */
 void vdp_wait() {
-    while (VDP_TICK != 0x80) {;;}
-    VDP_TICK = 0;
+    while ((VDP.tick & 0x80) == 0) {;;}
+    VDP.tick = 0;
 }
 
 //

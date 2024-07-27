@@ -28,10 +28,11 @@
 .export _vdp_write_address  := $FF5D
 .export _vdp_newline        := $FF63
 .export _vdp_console_out    := $FF69
+.export _vdp_init_g2mode    := $FF87
+.export _vdp_flush          := $FF8A
 
 ; VDP MEMORY AND POINTERS
-.export _vdp                := $B500
 .export _vdpptr1 :absolute  := $00B0
 .export _vdpptr2 :absolute  := $00B2
 .export _vdpptr3 :absolute  := $00B4
-
+.export _screenbuf :absolute := $B510

@@ -1,4 +1,6 @@
 ; vim: ft=asm_ca65
+.include "../../rom/inc/vdp.inc"
+
 .import popax
 
 .export _vdp_load_font_wrapper
@@ -12,3 +14,4 @@ _vdp_load_font_wrapper:
     sta $B0
     stx $B1
     jmp $FF60
+

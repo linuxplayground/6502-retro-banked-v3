@@ -3,10 +3,11 @@
 .include "kern.inc"
 
 .export _vdp_80_col, _vdp_unlock, _vdp_lock, _vdp_print, _vdp_clear_screen
-.export _vdp_init_textmode, _vdp_write_reg, _vdp_write_address, _vdp_load_font
+.export _vdp_init_textmode, _vdp_init_g2mode, _vdp_write_reg, _vdp_write_address, _vdp_load_font
 .export _vdp_newline, _vdp_write_char, _vdp_console_out
+.export _screenbuf, _vdp_flush
 
-.global vdp
+.global _vdp
 .globalzp vdpptr1,vdpptr2,vdpptr3
 
 .segment "VDPZP" : zeropage
@@ -16,7 +17,8 @@ vdpptr2:    .res 2
 vdpptr3:    .res 2
 
 .segment "VDPRAM"
-vdp:        .tag sVdp
+_vdp:       .tag sVdp
+_screenbuf: .res $300
 
 .code
 ; a utility function to print out a 16bit value in hex.
@@ -36,7 +38,7 @@ _vdp_80_col:
     ldx #$00
     jsr _vdp_write_reg
     lda #80
-    sta vdp + sVdp::cols
+    sta _vdp + sVdp::cols
     rts
 
 ;==============================================
@@ -80,11 +82,11 @@ _vdp_console_out:
 @backspace:
     jmp _vdp_backspace
 @tab:
-    lda vdp + sVdp::vx
+    lda _vdp + sVdp::vx
     and #%11111100
     clc
     adc #3
-    sta vdp + sVdp::vx
+    sta _vdp + sVdp::vx
     jmp _vdp_xy_to_nametable
 
 ;==============================================
@@ -111,14 +113,14 @@ _vdp_print:
 ;==============================================
 _vdp_write_char:
     pha
-    inc vdp + sVdp::vx
-    lda vdp + sVdp::cols
-    cmp vdp + sVdp::vx
+    inc _vdp + sVdp::vx
+    lda _vdp + sVdp::cols
+    cmp _vdp + sVdp::vx
     bcs :+
-    stz vdp + sVdp::vx
-    inc vdp + sVdp::vy
-    lda vdp + sVdp::rows
-    cmp vdp + sVdp::vy
+    stz _vdp + sVdp::vx
+    inc _vdp + sVdp::vy
+    lda _vdp + sVdp::rows
+    cmp _vdp + sVdp::vy
     bcs :+
     jsr _vdp_clear_screen
 :   pla
@@ -129,13 +131,13 @@ _vdp_write_char:
 ; move back, delete char, move back again.
 ;==============================================
 _vdp_backspace:
-    lda vdp + sVdp::vx
+    lda _vdp + sVdp::vx
     beq @nobackspace
-    dec vdp + sVdp::vx
+    dec _vdp + sVdp::vx
     jsr _vdp_xy_to_nametable
     lda #' '
     jsr _vdp_write_char
-    dec vdp + sVdp::vx
+    dec _vdp + sVdp::vx
     jmp _vdp_xy_to_nametable
 @nobackspace:
     rts
@@ -145,23 +147,23 @@ _vdp_backspace:
 ; of the next line.
 ;==============================================
 _vdp_newline:
-    stz vdp + sVdp::vx
-    inc vdp + sVdp::vy
-    lda vdp + sVdp::vy
-    cmp vdp + sVdp::rows
+    stz _vdp + sVdp::vx
+    inc _vdp + sVdp::vy
+    lda _vdp + sVdp::vy
+    cmp _vdp + sVdp::rows
     bcc _vdp_xy_to_nametable
     jmp _vdp_clear_screen
 
     ;fall through
 
 _vdp_xy_to_nametable:
-    copyptr vdp + sVdp::nametable, vdpptr1
+    copyptr _vdp + sVdp::nametable, vdpptr1
     ;debug16 vdpptr1
-    lda vdp + sVdp::vy
+    lda _vdp + sVdp::vy
     beq @addx
     tay
 @loop:
-    lda vdp + sVdp::cols
+    lda _vdp + sVdp::cols
     cmp #80
     bne :+
     add16 vdpptr1,80
@@ -175,7 +177,7 @@ _vdp_xy_to_nametable:
     dey
     bne @loop
 @addx:
-    lda vdp + sVdp::vx
+    lda _vdp + sVdp::vx
     clc
     adc vdpptr1
     sta vdpptr1
@@ -214,9 +216,9 @@ _vdp_write_address:
 ; Fills nametable with spaces
 ;==============================================
 _vdp_clear_screen:
-    vdp_set_write_address vdp + sVdp::nametable
+    vdp_set_write_address _vdp + sVdp::nametable
     ldy #8
-    lda vdp + sVdp::cols
+    lda _vdp + sVdp::cols
     cmp #80
     beq :+
     ldy #4
@@ -230,9 +232,9 @@ _vdp_clear_screen:
     bne :-
     dey 
     bne :--
-    stz vdp + sVdp::vx
-    stz vdp + sVdp::vy
-    vdp_set_write_address vdp + sVdp::nametable
+    stz _vdp + sVdp::vx
+    stz _vdp + sVdp::vy
+    vdp_set_write_address _vdp + sVdp::nametable
     rts
 
 ;==============================================
@@ -243,15 +245,46 @@ _vdp_init_textmode:
     jsr vdp_loadregisters
     ; set up vdp struct data
     lda #$00
-    sta vdp + sVdp::nametable
+    sta _vdp + sVdp::nametable
     lda #$08
-    sta vdp + sVdp::nametable + 1
-    stz vdp + sVdp::patterntable
-    stz vdp + sVdp::patterntable + 1
+    sta _vdp + sVdp::nametable + 1
+    stz _vdp + sVdp::patterntable
+    stz _vdp + sVdp::patterntable + 1
     lda #40
-    sta vdp + sVdp::cols
+    sta _vdp + sVdp::cols
     lda #24
-    sta vdp + sVdp::rows
+    sta _vdp + sVdp::rows
+    rts
+
+;==============================================
+; Init g2 mode 32x24
+;==============================================
+_vdp_init_g2mode:
+    set16 vdpptr1, g2mode_registers
+    jsr vdp_loadregisters
+    stz _vdp + sVdp::nametable
+    lda #$38
+    sta _vdp + sVdp::nametable + 1
+
+    stz _vdp + sVdp::patterntable
+    stz _vdp + sVdp::patterntable + 1
+
+    stz _vdp + sVdp::colortable
+    lda #$20
+    sta _vdp + sVdp::colortable + 1
+
+    stz _vdp + sVdp::spritepatterntable
+    lda #$18
+    sta _vdp + sVdp::spritepatterntable + 1
+
+    stz _vdp + sVdp::spriteattributetable
+    lda #$3B
+    sta _vdp + sVdp::spriteattributetable + 1
+
+    lda #32
+    sta _vdp + sVdp::cols
+    lda #$24
+    sta _vdp + sVdp::rows
     rts
 
 ;==============================================
@@ -279,7 +312,7 @@ vdp_loadregisters:
 ; size of font stored in vdpptr2
 ;==============================================
 _vdp_load_font:
-    vdp_set_write_address vdp + sVdp::patterntable
+    vdp_set_write_address _vdp + sVdp::patterntable
 @loop:
     lda (vdpptr1)
     sta F18A_RAM
@@ -296,6 +329,20 @@ _vdp_load_font:
 @done:
     rts
 
+_vdp_flush:
+    vdp_set_write_address _vdp + sVdp::nametable
+    set16 vdpptr1, _screenbuf
+    ldx #4
+@loop:
+    lda (vdpptr1)
+    sta F18A_RAM
+    inc vdpptr1
+    bne @loop
+    inc vdpptr1+1
+    dex
+    bne @loop
+    rts
+
 .rodata
 str_tab: .byte "    ",0
 textmode_registers:
@@ -305,4 +352,15 @@ textmode_registers:
     .byte $00, $04  ; pattern table at 0x0000
     .byte $f4, $07  ; white text on dark blue background
     .byte $ff       ; end of data table
+
+g2mode_registers:
+    .byte $02, $00  ; Graphics II Mode,No External Video
+    .byte $e0, $01  ; 16K,Enable Disp.,Enable int., 8x8 Sprites,Mag.Off
+    .byte $0e, $02  ; Address of Name Table in VRAM = Hex 3800
+    .byte $9f, $03  ; Color Table Address = Hex 2000 to Hex 2800
+    .byte $00, $04  ; Pattern Table Address = Hex 0000 to Hex 0800
+    .byte $76, $05  ; Address of Sprite Attribute Table in VRAM = Hex 3BOO
+    .byte $03, $06  ; Address of Sprite Pattern Table in VRAM = 1800
+    .byte $2b, $07  ; white on black
+    .byte $ff
 

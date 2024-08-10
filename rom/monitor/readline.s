@@ -18,10 +18,11 @@ readline_init:
 readline:
         newline
         print strPrompt
-        
+
         ldy #0
 @loop:
         jsr acia_getc
+        jsr to_upper
         jsr acia_putc
         cmp #$0D
         beq @done
@@ -47,6 +48,16 @@ readline:
         jsr acia_putc
         tya                     ; return with count in y
         rts
+
+to_upper:
+    cmp #'a'
+    bcc @done           ; less than or equal to z
+    cmp #'z' + 1
+    bcs @done           ; greater than or equal to a
+    and #%11011111
+@done:
+    rts
+
 
 .rodata
 strPrompt:      .asciiz "$> "
